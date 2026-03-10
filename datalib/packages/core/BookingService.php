@@ -15,7 +15,7 @@ class BookingService {
             SELECT s.*, f.name as facilitator_name 
             FROM sessions s
             JOIN facilitators f ON s.facilitator_id = f.id
-            WHERE s.status = 'AVAILABLE' 
+            WHERE s.status IN ('AVAILABLE', 'BOOKED')
                OR (s.status = 'PENDING' AND s.locked_until < ?)
             ORDER BY s.date_time ASC
         ");
@@ -88,5 +88,52 @@ class BookingService {
         // Only allow removing available sessions
         $stmt = $this->db->prepare("DELETE FROM sessions WHERE id = ? AND status = 'AVAILABLE'");
         return $stmt->execute([$sessionId]);
+    }
+
+    public function addFacilitator($name, $expertise) {
+        $stmt = $this->db->prepare("INSERT INTO facilitators (name, expertise) VALUES (?, ?)");
+        return $stmt->execute([$name, $expertise]);
+    }
+
+    public function updateFacilitator($id, $name, $expertise) {
+        $stmt = $this->db->prepare("UPDATE facilitators SET name = ?, expertise = ? WHERE id = ?");
+        return $stmt->execute([$name, $expertise, $id]);
+    }
+
+    public function deleteFacilitator($id) {
+        $this->db->beginTransaction();
+        try {
+            // Remove sessions first
+            $stmt = $this->db->prepare("DELETE FROM sessions WHERE facilitator_id = ?");
+            $stmt->execute([$id]);
+            
+            $stmt = $this->db->prepare("DELETE FROM facilitators WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return false;
+        }
+    }
+
+    public function createAdvancedBooking($facilitatorId, $topic, $dateTime, $mode, $userId, $specialRequests) {
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("INSERT INTO sessions (facilitator_id, topic, date_time, mode, status) VALUES (?, ?, ?, ?, 'BOOKED')");
+            $stmt->execute([$facilitatorId, $topic, $dateTime, $mode]);
+            $sessionId = $this->db->lastInsertId();
+
+            $stmt = $this->db->prepare("INSERT INTO bookings (user_id, session_id, special_requests, status) VALUES (?, ?, ?, 'CONFIRMED')");
+            $stmt->execute([$userId, $sessionId, $specialRequests]);
+
+            $this->db->commit();
+            NotificationWorker::sendConfirmation($userId, $sessionId, $mode);
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return false;
+        }
     }
 }

@@ -1,15 +1,12 @@
 <?php
 session_start();
-if (!isset($_SESSION['student_email'])) {
-    header('Location: login.php');
-    exit;
-}
 
-// Extract first name dynamically from email prefix (e.g. text before @ and split by .)
-$emailPrefix = explode('@', $_SESSION['student_email'])[0];
-$firstName = ucfirst(strtolower(explode('.', $emailPrefix)[0]));
-
-$studentInitials = strtoupper(substr($firstName, 0, 2));
+// Authentication removed as per user request
+// Set default view identities
+$_SESSION['user_id'] = 1; 
+$firstName = "Guest";
+$studentInitials = "G";
+$studentEmail = "guest@datalib.local";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -35,19 +32,7 @@ $studentInitials = strtoupper(substr($firstName, 0, 2));
         <div class="sidebar-header">
             <div class="avatar-large"><?= htmlspecialchars($studentInitials) ?></div>
             <h3><?= htmlspecialchars($firstName) ?></h3>
-            <p><?= htmlspecialchars($_SESSION['student_email']) ?></p>
-        </div>
-        <div class="sidebar-links">
-            <a href="logout.php" class="btn btn-outline"
-                style="width: 100%; justify-content: center; color: var(--danger); border-color: rgba(207, 34, 46, 0.3);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Sign Out
-            </a>
+            <p><?= htmlspecialchars($studentEmail) ?></p>
         </div>
     </div>
 
@@ -87,15 +72,31 @@ $studentInitials = strtoupper(substr($firstName, 0, 2));
                 <div class="legend-item"><span class="dot dot-closed"></span> Library Closed</div>
             </div>
         </div>
-
-        <div class="section-title">
-            <h3 id="selected-date-label">Available Sessions</h3>
-        </div>
-
-        <div id="sessions-grid" class="sessions-grid" style="margin-top: 1rem;">
-            <div class="loader-container">Select a date on the calendar to view appointments.</div>
+        <div id="booked-section" style="margin-top: 5rem; display: none; padding-top: 2rem; border-top: 2px dashed var(--border);">
+            <div class="section-title">
+                <h3 id="booked-date-label-main">Booked Appointments</h3>
+            </div>
+            <div id="booked-sessions-grid" class="sessions-grid" style="margin-top: 1.5rem;">
+                <!-- Populated via JS -->
+            </div>
         </div>
     </main>
+
+    <!-- Side Sessions Drawer -->
+    <div class="drawer-overlay" id="sessions-drawer-overlay"></div>
+    <div class="sessions-drawer" id="sessions-drawer">
+        <div class="drawer-header">
+            <div>
+                <h3 id="selected-date-label">Available Sessions</h3>
+                <p id="drawer-date-subtitle"></p>
+            </div>
+            <button class="btn-icon" id="close-drawer-btn" style="font-size: 1.5rem;">&times;</button>
+        </div>
+
+        <div id="sessions-grid" class="drawer-sessions-list">
+            <div class="loader-container">Select a date on the calendar to view appointments.</div>
+        </div>
+    </div>
 
     <!-- Booking Context Modal Flow -->
     <div class="modal-overlay" id="checkout-modal">
@@ -175,6 +176,12 @@ $studentInitials = strtoupper(substr($firstName, 0, 2));
         </div>
     </div>
 
+    <!-- Advanced Booking Modal -->
+    <?php include 'components/booking_modal.php'; ?>
+
+    <!-- Facilitator Admin Access -->
+    <?php include 'components/admin_login_modal.php'; ?>
+    
     <!-- Facilitators Modal -->
     <?php include 'components/facilitators_modal.php'; ?>
 

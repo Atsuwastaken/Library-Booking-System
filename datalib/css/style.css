@@ -24,6 +24,15 @@ body {
   line-height: 1.5;
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-8px); }
+}
+
+.shake { animation: shake 0.4s ease-in-out; border-color: var(--danger) !important; }
+
 header {
   height: 100px;
   background: linear-gradient(135deg, #003366 0%, #0056b3 100%);
@@ -34,9 +43,17 @@ header {
   padding: 0 3rem;
   box-shadow: 0 4px 15px rgba(0,0,0,0.15);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  z-index: 100;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   transform-origin: top center;
+  backdrop-filter: blur(10px);
+}
+
+header.scrolled {
+  height: 80px;
+  background: linear-gradient(135deg, rgba(0, 51, 102, 0.9) 0%, rgba(0, 86, 179, 0.9) 100%);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
 header:hover {
@@ -238,21 +255,43 @@ header:hover {
   gap: 2rem;
 }
 
+@keyframes cardEntry {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .session-card {
-  background: var(--panel-bg);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: var(--radius);
-  padding: 1.5rem;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: cardEntry 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  position: relative;
+  overflow: hidden;
+}
+
+.session-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
 }
 
 .session-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-3px);
+  box-shadow: 0 15px 45px rgba(0, 51, 102, 0.12);
+  transform: translateY(-8px) scale(1.02) rotateX(2deg) rotateY(2deg);
   border-color: var(--secondary);
+  background: #ffffff;
+}
+
+.session-card:hover::before {
+  background: linear-gradient(135deg, rgba(47, 129, 247, 0.1) 0%, rgba(255,255,255,0) 100%);
 }
 
 .session-header {
@@ -275,11 +314,30 @@ header:hover {
 .badge-onsite { background: #fef3c7; color: #d97706; }
 
 .session-topic {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
   color: var(--primary-color);
-  margin-bottom: 0.5rem;
-  line-height: 1.3;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.session-icon-box {
+  width: 50px;
+  height: 50px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.session-card:hover .session-icon-box {
+  transform: rotate(-5deg) scale(1.1);
+  background: var(--secondary);
+  color: white;
 }
 
 .session-meta {
@@ -287,8 +345,8 @@ header:hover {
   font-size: 0.95rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: 0.65rem;
+  margin-bottom: 1.75rem;
   flex-grow: 1;
 }
 
@@ -532,6 +590,7 @@ header:hover {
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+  user-select: none;
 }
 
 .calendar-cell:hover {
@@ -570,9 +629,24 @@ header:hover {
   gap: 4px;
 }
 
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(47, 129, 247, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(47, 129, 247, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(47, 129, 247, 0); }
+}
+
 .event-dot {
   width: 8px; height: 8px; border-radius: 50%;
+  transition: transform 0.3s ease;
 }
+
+.calendar-cell:hover .event-dot {
+  transform: scale(1.4);
+}
+
+.dot-available { background: var(--success); }
+.dot-booked { background: var(--danger); animation: pulseGlow 2s infinite; }
+.dot-closed { background: var(--text-secondary); opacity: 0.5; }
 
 .calendar-legend {
   display: flex;
@@ -690,10 +764,29 @@ header:hover {
   }
 }
 
+.btn-icon {
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--primary-color);
+}
+
 /* Facilitators Grid & Card */
 .facilitators-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
   max-height: 70vh;
   overflow-y: auto;
@@ -703,48 +796,158 @@ header:hover {
 .facilitator-card {
   background: #f8fafc;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem;
+  border-radius: 16px;
+  padding: 1.75rem;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  transition: all 0.2s ease;
+  gap: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 .facilitator-card:hover {
   border-color: var(--secondary);
   background: #fff;
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 51, 102, 0.08);
+  transform: translateY(-5px);
 }
 
 .fac-avatar {
-  width: 50px;
-  height: 50px;
+  width: 64px;
+  height: 64px;
   background: var(--secondary);
   color: white;
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 800;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(47, 129, 247, 0.2);
 }
 
 .fac-info h4 {
-  font-size: 1rem;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--primary-color);
   margin-bottom: 0.25rem;
 }
 
 .fac-info p {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.4;
 }
 
 @media (max-width: 600px) {
-  .facilitator-card { flex-direction: column; text-align: center; }
+  .facilitator-card { flex-direction: column; text-align: center; padding-top: 3rem; }
   .fac-info { display: flex; flex-direction: column; align-items: center; }
+}
+.login-input {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 1.15rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px rgba(47, 129, 247, 0.2);
+}
+
+::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+/* Sessions Drawer */
+.sessions-drawer {
+  position: fixed;
+  top: 0;
+  right: -500px;
+  width: 450px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+  z-index: 2500;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+}
+
+.sessions-drawer.active {
+  right: 0;
+}
+
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(13, 17, 23, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 2400;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-header {
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-header h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary-color);
+}
+
+.drawer-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.drawer-sessions-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Adjust session cards for vertical layout in drawer */
+.drawer-sessions-list .session-card {
+  padding: 1.25rem;
+  max-width: 100%;
+}
+
+.drawer-sessions-list .session-topic {
+  font-size: 1.15rem;
+}
+
+.drawer-sessions-list .session-icon-box {
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
 }

@@ -21,12 +21,14 @@
                 <input type="hidden" id="edit-fac-id">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label>Full Name</label>
+                        <label for="fac-name">Full Name</label>
                         <input type="text" id="fac-name" class="login-input" placeholder="e.g. Dr. June Garcia" required>
                     </div>
                     <div class="form-group">
-                        <label>Expertise / Department</label>
-                        <input type="text" id="fac-expertise" class="login-input" placeholder="e.g. Theoretical Physics" required>
+                        <label for="fac-topic-ids">Assigned Topics</label>
+                        <select id="fac-topic-ids" class="login-input" multiple required style="min-height: 80px;">
+                            <!-- Populated dynamically via JS -->
+                        </select>
                     </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end;">
@@ -51,15 +53,16 @@
                 <input type="hidden" id="manage-facilitator-id">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label>Session Topic</label>
-                        <input type="text" id="new-session-topic" class="login-input" placeholder="e.g. Advanced Calculus" required>
+                        <label for="new-session-topic">Session Topic</label>
+                        <select id="new-session-topic" class="login-input" required>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label>Date & Time</label>
+                        <label for="new-session-dt">Date & Time</label>
                         <input type="datetime-local" id="new-session-dt" class="login-input" required>
                     </div>
                     <div class="form-group">
-                        <label>Mode</label>
+                        <label for="new-session-mode">Mode</label>
                         <select id="new-session-mode" class="login-input">
                             <option value="Onsite">Onsite</option>
                             <option value="Online">Online</option>

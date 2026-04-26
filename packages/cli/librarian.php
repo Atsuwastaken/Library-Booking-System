@@ -17,14 +17,14 @@ foreach($sessions as $s) {
 }
 
 echo "\n--- RECORDED RESERVATIONS (CONFIRMED) ---\n";
-$stmt = $db->query("SELECT b.id, u.name, s.topic, b.status FROM bookings b JOIN users u ON b.user_id = u.id JOIN sessions s ON b.session_id = s.id");
+$stmt = $db->query("SELECT s.id, COALESCE(u.name, s.requester_name, 'External Requestor') as name, s.topic, s.status FROM sessions s LEFT JOIN users u ON s.user_id = u.id WHERE s.status = 'CONFIRMED' ORDER BY s.date_time ASC");
 $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (count($bookings) === 0) {
     echo "  > No bookings found at this time.\n";
 } else {
     foreach($bookings as $b) {
-        echo sprintf("Transaction #%04d | Student ID: %-16s | Session: %-32s | Node: %s\n", 
+        echo sprintf("Session #%04d | Requestor: %-16s | Session: %-32s | Status: %s\n", 
             $b['id'], $b['name'], $b['topic'], $b['status']);
     }
 }

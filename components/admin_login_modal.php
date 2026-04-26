@@ -9,7 +9,7 @@
         
         <form id="admin-login-form">
             <div class="form-group">
-                <input type="password" id="admin-password" class="login-input" placeholder="Management Password" required style="text-align: center; font-size: 1.2rem; letter-spacing: 0.2em;">
+                <input type="password" id="admin-password" class="login-input" placeholder="Management Password" aria-label="Management Password" required style="text-align: center; font-size: 1.2rem; letter-spacing: 0.2em;">
             </div>
             <div id="admin-error" style="color: var(--danger); font-size: 0.85rem; margin-top: -1rem; margin-bottom: 1rem; display: none;">Invalid Management Credentials.</div>
             <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">Verify Identity</button>

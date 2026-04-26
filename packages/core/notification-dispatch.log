@@ -1,0 +1,126 @@
+[2026-03-07 05:09:15] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     User ID: 1
+     Session ID: 6
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-03-07 15:03:07] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: 24-1021-948@student.auf.edu.ph (User ID: 9)
+     Session ID: 7
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-03-08 11:28:46] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 8
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-03-08 12:30:46] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 9
+     Modality: Online
+     Data: Meeting Link: https://zoom.us/j/mockmeeting4702
+---------------------------------------------------------
+[2026-04-02 19:30:13] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 10
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-02 20:30:03] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 1
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-02 20:30:59] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 2
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-11 07:13:25] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 3
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-13 11:44:10] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 4
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-14 04:06:40] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 5
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-14 04:21:18] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 6
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-14 04:28:10] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 7
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-14 04:46:07] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 8
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-14 05:25:42] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 9
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-16 20:24:51] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 10
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-17 08:15:12] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: student@example.com (User ID: 1)
+     Session ID: 11
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-17 14:41:27] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: manalo.jullian@student.auf.edu.ph (User ID: 2)
+     Session ID: 14
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-17 14:42:41] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: manalo.jullian@student.auf.edu.ph (User ID: 2)
+     Session ID: 15
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-18 05:06:13] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: manalo.jullian@student.auf.edu.ph (User ID: 2)
+     Session ID: 17
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-18 05:13:54] ✉️ ASYNC EMAIL CONFIRMATION DISPATCHED
+     To: manalo.jullian@student.auf.edu.ph (User ID: 2)
+     Session ID: 18
+     Modality: Onsite
+     Data: Location: Main Library, Conference Room A
+---------------------------------------------------------
+[2026-04-18 09:16:16] Email FAILED for manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: CONFIRMED | Error: SMTP Error: Could not authenticate.
+[2026-04-18 09:18:45] Email FAILED for julliancmanalo@gmail.com | Subject: Appointment Update: CONFIRMED | Error: SMTP Error: Could not authenticate.
+[2026-04-18 09:25:04] Email FAILED for julliancmanalo@gmail.com | Subject: Appointment Update: CANCELLED | Error: SMTP Error: Could not authenticate.
+[2026-04-18 09:26:23] Email FAILED for manalo.jullian@student.auf.edu.ph | Subject: Library Appointment Confirmation | Error: SMTP Error: Could not authenticate.
+[2026-04-18 09:26:57] Email FAILED for manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: CONFIRMED | Error: SMTP Error: Could not authenticate.
+[2026-04-18 09:28:34] Email sent to manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: COMPLETED

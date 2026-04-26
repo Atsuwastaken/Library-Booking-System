@@ -6,8 +6,11 @@
     </div>
     <div class="header-nav">
         <nav class="main-nav">
-            <!-- <a href="#" class="active">Browse</a> -->
+            <a href="#" class="active">Browse</a>
             <a href="#" id="view-facilitators-btn">Facilitators</a>
+            <?php if (!empty($isAdminUser)): ?>
+                <a href="admin.php" class="admin-return-link">Admin Dashboard</a>
+            <?php endif; ?>
         </nav>
         <div class="avatar" id="avatar-btn" style="cursor: pointer;" title="Open account menu">
             <?= htmlspecialchars($studentInitials) ?>

@@ -744,7 +744,7 @@ class BookingService {
     private function logDecision($sessionId, $decision, $reason = null, $notes = null)
     {
         $stmt = $this->db->prepare("SELECT s.id,
-                                   s.appointment_type, s.topic, s.venue, s.mode,
+                                   s.type AS appointment_type, s.topic, s.venue, s.mode,
                                    s.date_time, s.end_time,
                                    COALESCE(f.name, '') AS facilitator_name,
                                    COALESCE(u.name, s.requester_name, '') AS requester_name,

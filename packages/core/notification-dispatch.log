@@ -134,3 +134,6 @@
 [2026-04-27 09:04:31] Email sent to venturina.galvin@student.auf.edu.ph | Subject: Appointment Update: CANCELLED
 [2026-04-27 09:05:48] Email sent to garoudesu21@gmail.com | Subject: Appointment Update: COMPLETED
 >>>>>>> Stashed changes
+[2026-04-27 12:11:31] Appointment update email skipped. Session/email not found for session_id=900000
+[2026-04-27 12:12:29] Email sent to julliancmanalo@gmail.com | Subject: Appointment Update: CONFIRMED
+[2026-04-27 12:13:14] Email sent to Test@student.auf.edu.ph | Subject: Appointment Update: CONFIRMED

@@ -2455,6 +2455,197 @@ header:hover {
   border-color: #fca5a5;
 }
 
+/* ===== Archive System Styles ===== */
+
+/* Pending card pinned indicator */
+.app-card.app-card-pinned {
+  border-left: 4px solid #eab308;
+  background: linear-gradient(145deg, #fffdf5 0%, #fefce8 30%, #ffffff 100%);
+}
+
+/* Card checkbox for selection */
+.app-card-checkbox {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+  z-index: 5;
+}
+
+.app-card-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.app-card.has-checkbox {
+  padding-left: 2.5rem;
+}
+
+.app-card.app-card-selected {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.18), 0 8px 18px -12px rgba(15, 23, 42, 0.4);
+}
+
+/* Archive action button */
+.btn-archive-action {
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  background: #fffbeb;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-archive-action:hover {
+  background: #fef3c7;
+  border-color: #d97706;
+}
+
+/* Date range quick-select pills */
+.date-range-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.date-range-pill {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.date-range-pill:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.date-range-pill.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+/* Archived card dimmed appearance */
+.app-card.app-card-archived {
+  opacity: 0.82;
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: #cbd5e1;
+}
+
+.app-card.app-card-archived:hover {
+  opacity: 1;
+}
+
+.app-card-archived-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Archive card action buttons row */
+.app-card-archive-actions {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 0.9rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.app-card-archive-actions .btn {
+  position: static;
+}
+
+.btn-delete-archived {
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  background: #fff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-archived:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.btn-unarchive {
+  border: 1px solid #86efac;
+  color: #166534;
+  background: #fff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-unarchive:hover {
+  background: #f0fdf4;
+  border-color: #4ade80;
+}
+
+/* Pin badge */
+.app-card-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Filter bar responsive update for pills */
+@media (max-width: 900px) {
+  .date-range-pills {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .filter-actions {
+    flex-wrap: wrap;
+  }
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }

@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initExportLogs();
     initUsersDirectoryUI();
+    initArchiveFeatures();
+    initDateRangePills();
+    initDecisionLogs();
 
     const topicSearch = document.getElementById('topics-search');
     const facilitatorSearch = document.getElementById('facilitators-search');
@@ -106,6 +109,12 @@ function initTabs() {
             if (tab === 'users') {
                 loadUsersAdminData();
             }
+            if (tab === 'archive') {
+                loadArchivedAppointments();
+            }
+            if (tab === 'decision-logs') {
+                loadDecisionLogs();
+            }
         });
     });
 }
@@ -116,6 +125,12 @@ let adminUsersCache = [];
 let adminRegistrationRequestsCache = [];
 let adminDepartmentOptionsCache = [];
 let adminUsersSearchTerm = '';
+let selectedArchiveIds = new Set();
+let selectedRequestIds = new Set();
+let archivedAppointmentsCache = [];
+let activeArchiveSelectedIds = new Set();
+let activeDateRange = '';
+let decisionLogsCache = [];
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -844,6 +859,14 @@ function resetRequestFilters() {
         if (el) el.value = defaults[id];
     });
 
+    // Clear date range pills
+    activeDateRange = '';
+    document.querySelectorAll('.date-range-pill').forEach(p => p.classList.remove('active'));
+
+    // Clear selection
+    selectedRequestIds.clear();
+    updateArchiveSelectedButton();
+
     applyRequestFiltersAndRender();
 }
 
@@ -913,10 +936,38 @@ function applyRequestFiltersAndRender() {
         if (facilitator !== 'all' && appFacilitator !== facilitator) return false;
         if (status !== 'all' && String(app.booking_status).toLowerCase() !== String(status).toLowerCase()) return false;
         if (selectedDate && !String(app.date_time || '').startsWith(selectedDate)) return false;
+
+        // Date range filter
+        if (activeDateRange) {
+            const appDate = new Date(app.date_time);
+            const now = new Date();
+            if (activeDateRange === 'this-week') {
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() - now.getDay());
+                startOfWeek.setHours(0, 0, 0, 0);
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 7);
+                if (appDate < startOfWeek || appDate >= endOfWeek) return false;
+            } else if (activeDateRange === 'past-month') {
+                const oneMonthAgo = new Date(now);
+                oneMonthAgo.setMonth(now.getMonth() - 1);
+                if (appDate < oneMonthAgo) return false;
+            } else if (activeDateRange === 'past-3-months') {
+                const threeMonthsAgo = new Date(now);
+                threeMonthsAgo.setMonth(now.getMonth() - 3);
+                if (appDate < threeMonthsAgo) return false;
+            }
+        }
+
         return true;
     });
 
+    // Sort: pin PENDING to top, then by date within each group
+    const statusPriority = { 'PENDING': 0, 'CONFIRMED': 1, 'COMPLETED': 2, 'CANCELLED': 3, 'DECLINED': 4 };
     filtered.sort((a, b) => {
+        const pa = statusPriority[String(a.booking_status).toUpperCase()] ?? 5;
+        const pb = statusPriority[String(b.booking_status).toUpperCase()] ?? 5;
+        if (pa !== pb) return pa - pb;
         const ta = new Date(a.date_time).getTime() || 0;
         const tb = new Date(b.date_time).getTime() || 0;
         return dateSort === 'oldest' ? ta - tb : tb - ta;
@@ -928,6 +979,8 @@ function applyRequestFiltersAndRender() {
         summary.textContent = `Showing ${shown} of ${total} appointment${total === 1 ? '' : 's'}`;
     }
 
+    selectedRequestIds.clear();
+    updateArchiveSelectedButton();
     renderRequests(filtered, grid, oldTbody, container);
 }
 
@@ -942,7 +995,28 @@ function renderRequests(apps, grid, oldTbody, container) {
     apps.forEach(app => {
         if (grid) {
             const card = document.createElement('div');
-            card.className = 'app-card';
+            const normalizedStatus = String(app.booking_status).trim().toUpperCase();
+            const isPending = normalizedStatus === 'PENDING';
+            card.className = `app-card has-checkbox${isPending ? ' app-card-pinned' : ''}`;
+
+            // Checkbox for selection
+            const checkboxWrap = document.createElement('label');
+            checkboxWrap.className = 'app-card-checkbox';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.sessionId = app.session_id;
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    selectedRequestIds.add(app.session_id);
+                    card.classList.add('app-card-selected');
+                } else {
+                    selectedRequestIds.delete(app.session_id);
+                    card.classList.remove('app-card-selected');
+                }
+                updateArchiveSelectedButton();
+            });
+            checkboxWrap.appendChild(checkbox);
+            card.appendChild(checkboxWrap);
 
             const d = new Date(app.date_time);
             const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -957,7 +1031,6 @@ function renderRequests(apps, grid, oldTbody, container) {
             const requestData = getAppointmentRequestData(app);
             const reminderMinutes = getReminderMinutesForApp(app, requestData);
             const reminderInfo = formatReminderInfo(app.date_time, `${reminderMinutes} minutes`);
-            const normalizedStatus = String(app.booking_status).trim().toUpperCase();
             const isClosedStatus = normalizedStatus === 'CANCELLED' || normalizedStatus === 'DECLINED';
             const closedLabel = normalizedStatus === 'DECLINED' ? 'DECLINED' : 'CANCELLED';
 
@@ -966,8 +1039,10 @@ function renderRequests(apps, grid, oldTbody, container) {
             if (normalizedStatus === 'COMPLETED') statusColor = '#2563eb';
             if (isClosedStatus) statusColor = '#ef4444';
 
-            card.innerHTML = `
-                <div class="app-card-type">${app.appointment_type}</div>
+            const pinBadge = isPending ? '<span class="app-card-pin-badge">📌 Pinned</span>' : '';
+
+            card.innerHTML += `
+                <div class="app-card-type">${app.appointment_type}${pinBadge}</div>
                 <div class="app-card-status" style="color: ${statusColor};">
                     ${app.booking_status}
                 </div>
@@ -2091,5 +2166,460 @@ async function submitAdminBooking(event) {
     } catch (error) {
         console.error(error);
         notify('Unable to create booking.', 'error');
+    }
+}
+
+/* ========== Archive System ========== */
+
+function initArchiveFeatures() {
+    const archiveBtn = document.getElementById('archive-selected-btn');
+    if (archiveBtn) {
+        archiveBtn.addEventListener('click', archiveSelectedAppointments);
+    }
+
+    const unarchiveBtn = document.getElementById('unarchive-selected-btn');
+    if (unarchiveBtn) {
+        unarchiveBtn.addEventListener('click', unarchiveSelectedAppointments);
+    }
+
+    // Archive tab filter handlers
+    const archiveFilterStatus = document.getElementById('archive-filter-status');
+    const archiveFilterDatetime = document.getElementById('archive-filter-datetime');
+    if (archiveFilterStatus) archiveFilterStatus.addEventListener('change', renderArchivedAppointments);
+    if (archiveFilterDatetime) archiveFilterDatetime.addEventListener('change', renderArchivedAppointments);
+}
+
+function initDateRangePills() {
+    const pills = document.querySelectorAll('.date-range-pill[data-range]');
+    pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            const range = pill.dataset.range;
+            if (activeDateRange === range) {
+                // Deactivate
+                activeDateRange = '';
+                pill.classList.remove('active');
+            } else {
+                activeDateRange = range;
+                pills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+            }
+            applyRequestFiltersAndRender();
+        });
+    });
+}
+
+function updateArchiveSelectedButton() {
+    const btn = document.getElementById('archive-selected-btn');
+    const countEl = document.getElementById('archive-selected-count');
+    if (!btn) return;
+
+    const count = selectedRequestIds.size;
+    if (count > 0) {
+        btn.style.display = 'inline-flex';
+        if (countEl) countEl.textContent = count;
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+function updateUnarchiveSelectedButton() {
+    const btn = document.getElementById('unarchive-selected-btn');
+    const countEl = document.getElementById('unarchive-selected-count');
+    if (!btn) return;
+
+    const count = activeArchiveSelectedIds.size;
+    if (count > 0) {
+        btn.style.display = 'inline-flex';
+        if (countEl) countEl.textContent = count;
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+async function archiveSelectedAppointments() {
+    const ids = Array.from(selectedRequestIds);
+    if (ids.length === 0) {
+        notify('No appointments selected.', 'error');
+        return;
+    }
+
+    if (!confirm(`Archive ${ids.length} appointment${ids.length > 1 ? 's' : ''}? They will be moved to the Archive tab.`)) return;
+
+    try {
+        const res = await fetch('api.php?action=archive_appointments', {
+            method: 'POST',
+            body: JSON.stringify({ session_ids: ids })
+        });
+        const data = await res.json();
+        if (data.success) {
+            notify(`${ids.length} appointment${ids.length > 1 ? 's' : ''} archived successfully`);
+            selectedRequestIds.clear();
+            updateArchiveSelectedButton();
+            await loadRequests();
+        } else {
+            notify(data.message || 'Failed to archive appointments.', 'error');
+        }
+    } catch (error) {
+        console.error(error);
+        notify('Failed to archive appointments.', 'error');
+    }
+}
+
+async function unarchiveSelectedAppointments() {
+    const ids = Array.from(activeArchiveSelectedIds);
+    if (ids.length === 0) {
+        notify('No appointments selected.', 'error');
+        return;
+    }
+
+    if (!confirm(`Unarchive ${ids.length} appointment${ids.length > 1 ? 's' : ''}? They will be restored to the main list.`)) return;
+
+    try {
+        const res = await fetch('api.php?action=unarchive_appointments', {
+            method: 'POST',
+            body: JSON.stringify({ session_ids: ids })
+        });
+        const data = await res.json();
+        if (data.success) {
+            notify(`${ids.length} appointment${ids.length > 1 ? 's' : ''} restored`);
+            activeArchiveSelectedIds.clear();
+            updateUnarchiveSelectedButton();
+            await loadArchivedAppointments();
+            await loadRequests();
+        } else {
+            notify(data.message || 'Failed to unarchive appointments.', 'error');
+        }
+    } catch (error) {
+        console.error(error);
+        notify('Failed to unarchive appointments.', 'error');
+    }
+}
+
+async function loadArchivedAppointments() {
+    const grid = document.getElementById('archive-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div style="padding: 2rem; color: #64748b;">Loading archived appointments...</div>';
+
+    try {
+        const res = await fetch('api.php?action=get_archived_appointments');
+        const data = await res.json();
+        if (data.success) {
+            archivedAppointmentsCache = Array.isArray(data.appointments) ? data.appointments : [];
+            activeArchiveSelectedIds.clear();
+            updateUnarchiveSelectedButton();
+            renderArchivedAppointments();
+        } else {
+            grid.innerHTML = '<div style="padding: 2rem; color: #ef4444;">Failed to load archived appointments.</div>';
+        }
+    } catch (error) {
+        console.error(error);
+        grid.innerHTML = '<div style="padding: 2rem; color: #ef4444;">Error loading archived appointments.</div>';
+    }
+}
+
+function renderArchivedAppointments() {
+    const grid = document.getElementById('archive-grid');
+    if (!grid) return;
+
+    const status = document.getElementById('archive-filter-status')?.value || 'all';
+    const dateSort = document.getElementById('archive-filter-datetime')?.value || 'newest';
+
+    let filtered = archivedAppointmentsCache.filter(app => {
+        if (status !== 'all' && String(app.booking_status).toLowerCase() !== String(status).toLowerCase()) return false;
+        return true;
+    });
+
+    filtered.sort((a, b) => {
+        const ta = new Date(a.date_time).getTime() || 0;
+        const tb = new Date(b.date_time).getTime() || 0;
+        return dateSort === 'oldest' ? ta - tb : tb - ta;
+    });
+
+    const summary = document.getElementById('archive-summary');
+    if (summary) {
+        const total = archivedAppointmentsCache.length;
+        const shown = filtered.length;
+        summary.textContent = `Showing ${shown} of ${total} archived appointment${total === 1 ? '' : 's'}`;
+    }
+
+    grid.innerHTML = '';
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div style="padding: 2rem; color: #64748b;">No archived appointments found.</div>';
+        return;
+    }
+
+    filtered.forEach(app => {
+        const card = document.createElement('div');
+        card.className = 'app-card app-card-archived has-checkbox';
+
+        // Checkbox for selection
+        const checkboxWrap = document.createElement('label');
+        checkboxWrap.className = 'app-card-checkbox';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.dataset.sessionId = app.session_id;
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                activeArchiveSelectedIds.add(app.session_id);
+                card.classList.add('app-card-selected');
+            } else {
+                activeArchiveSelectedIds.delete(app.session_id);
+                card.classList.remove('app-card-selected');
+            }
+            updateUnarchiveSelectedButton();
+        });
+        checkboxWrap.appendChild(checkbox);
+        card.appendChild(checkboxWrap);
+
+        const d = new Date(app.date_time);
+        const dateStr = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+        let endTimeStr = 'TBA';
+        if (app.end_time) {
+            const de = new Date(app.end_time);
+            endTimeStr = de.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+
+        const requestData = getAppointmentRequestData(app);
+        const normalizedStatus = String(app.booking_status).trim().toUpperCase();
+        const isClosedStatus = normalizedStatus === 'CANCELLED' || normalizedStatus === 'DECLINED';
+        const closedLabel = normalizedStatus === 'DECLINED' ? 'DECLINED' : 'CANCELLED';
+
+        let statusColor = '#eab308';
+        if (normalizedStatus === 'CONFIRMED') statusColor = '#22c55e';
+        if (normalizedStatus === 'COMPLETED') statusColor = '#2563eb';
+        if (isClosedStatus) statusColor = '#ef4444';
+
+        const archivedDate = app.archived_at ? new Date(app.archived_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+
+        card.innerHTML += `
+            <div class="app-card-archived-badge">📦 Archived ${archivedDate}</div>
+            <div class="app-card-type">${app.appointment_type}</div>
+            <div class="app-card-status" style="color: ${statusColor};">
+                ${app.booking_status}
+            </div>
+            <div class="app-card-desc">(${app.topic})</div>
+            
+            <div class="app-card-detail">DATE: <span>${dateStr}</span></div>
+            <div class="app-card-detail">TIME: <span>${timeStr} - ${endTimeStr}</span></div>
+            <div class="app-card-detail">NAME: <span>${requestData.name}</span></div>
+            <div class="app-card-detail">EMAIL: <span>${requestData.email}</span></div>
+            <div class="app-card-detail">COLLEGE: <span>${requestData.dept}</span></div>
+            <div class="app-card-detail">MODE: <span>${app.mode}</span></div>
+            <div class="app-card-detail">FACILITATOR: <span>${app.facilitator_name || 'TBA'}</span></div>
+            ${isClosedStatus && app.cancellation_reason ? `<div class="app-card-detail">${closedLabel} REASON: <span>${app.cancellation_reason}</span></div>` : ''}
+            
+            <div class="app-card-detail" style="margin-top: 0.8rem;">NOTES: <span style="font-style: italic;">"${requestData.notes}"</span></div>
+        `;
+
+        // Action buttons
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'app-card-archive-actions';
+
+        const unarchiveBtn = document.createElement('button');
+        unarchiveBtn.className = 'btn-unarchive';
+        unarchiveBtn.textContent = 'Restore';
+        unarchiveBtn.onclick = async () => {
+            try {
+                const res = await fetch('api.php?action=unarchive_appointments', {
+                    method: 'POST',
+                    body: JSON.stringify({ session_ids: [app.session_id] })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    notify('Appointment restored');
+                    await loadArchivedAppointments();
+                    await loadRequests();
+                } else {
+                    notify(data.message || 'Failed to restore.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                notify('Failed to restore appointment.', 'error');
+            }
+        };
+        actionsDiv.appendChild(unarchiveBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete-archived';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = async () => {
+            if (!confirm('Permanently delete this archived appointment? This action cannot be undone. The appointment log will be preserved.')) return;
+            try {
+                const res = await fetch('api.php?action=delete_archived_appointment', {
+                    method: 'POST',
+                    body: JSON.stringify({ session_id: app.session_id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    notify('Appointment permanently deleted');
+                    await loadArchivedAppointments();
+                } else {
+                    notify(data.message || 'Failed to delete.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                notify('Failed to delete appointment.', 'error');
+            }
+        };
+        actionsDiv.appendChild(deleteBtn);
+
+        card.appendChild(actionsDiv);
+        grid.appendChild(card);
+    });
+}
+
+/* ========== Decision Logs ========== */
+
+function initDecisionLogs() {
+    const filter = document.getElementById('decision-log-filter');
+    if (filter) {
+        filter.addEventListener('change', renderDecisionLogs);
+    }
+
+    const exportBtn = document.getElementById('export-decision-logs-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportDecisionLogsCsv);
+    }
+}
+
+async function loadDecisionLogs() {
+    const tbody = document.getElementById('decision-logs-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="8" style="padding: 2rem; color: #64748b; text-align: center;">Loading decision logs...</td></tr>';
+
+    try {
+        const res = await fetch('api.php?action=get_decision_logs');
+        const data = await res.json();
+        if (data.success) {
+            decisionLogsCache = Array.isArray(data.logs) ? data.logs : [];
+            renderDecisionLogs();
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" style="padding: 2rem; color: #ef4444; text-align: center;">Failed to load decision logs.</td></tr>';
+        }
+    } catch (error) {
+        console.error(error);
+        tbody.innerHTML = '<tr><td colspan="8" style="padding: 2rem; color: #ef4444; text-align: center;">Error loading decision logs.</td></tr>';
+    }
+}
+
+function renderDecisionLogs() {
+    const tbody = document.getElementById('decision-logs-tbody');
+    if (!tbody) return;
+
+    const filter = document.getElementById('decision-log-filter')?.value || 'all';
+
+    let filtered = decisionLogsCache;
+    if (filter !== 'all') {
+        filtered = decisionLogsCache.filter(log =>
+            String(log.decision).toUpperCase() === filter.toUpperCase()
+        );
+    }
+
+    const summary = document.getElementById('decision-logs-summary');
+    if (summary) {
+        const total = decisionLogsCache.length;
+        const shown = filtered.length;
+        summary.textContent = `Showing ${shown} of ${total} decision log${total === 1 ? '' : 's'}`;
+    }
+
+    tbody.innerHTML = '';
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="padding: 2rem; color: #64748b; text-align: center;">No decision logs found.</td></tr>';
+        return;
+    }
+
+    filtered.forEach(log => {
+        const tr = document.createElement('tr');
+
+        const isApproved = String(log.decision).toUpperCase() === 'CONFIRMED';
+        const badgeColor = isApproved ? '#22c55e' : '#ef4444';
+        const badgeBg = isApproved ? '#f0fdf4' : '#fef2f2';
+        const badgeBorder = isApproved ? '#bbf7d0' : '#fecaca';
+        const badgeLabel = isApproved ? 'APPROVED' : 'DECLINED';
+
+        const decidedDate = log.decided_at ? new Date(log.decided_at) : null;
+        const decidedStr = decidedDate
+            ? decidedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+              ' ' + decidedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+            : 'N/A';
+
+        const apptDate = log.appointment_date ? new Date(log.appointment_date) : null;
+        const apptStr = apptDate
+            ? apptDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+              ' ' + apptDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+            : '';
+
+        const reasonNotes = log.cancellation_reason || log.evaluation_notes || '—';
+
+        tr.innerHTML = `
+            <td>
+                <span style="display: inline-block; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 800; color: ${badgeColor}; background: ${badgeBg}; border: 1px solid ${badgeBorder};">
+                    ${badgeLabel}
+                </span>
+            </td>
+            <td>
+                <div style="font-weight: 600; font-size: 0.85rem;">${decidedStr}</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">Appt: ${apptStr}</div>
+            </td>
+            <td>
+                <div style="font-weight: 700; font-size: 0.85rem;">${escapeHtml(log.appointment_type)}</div>
+                <div style="font-size: 0.78rem; color: #64748b;">${escapeHtml(log.topic)}</div>
+            </td>
+            <td>
+                <div style="font-weight: 600;">${escapeHtml(log.requester_name)}</div>
+                <div style="font-size: 0.75rem; color: #64748b;">${escapeHtml(log.requester_email)}</div>
+            </td>
+            <td style="font-size: 0.85rem;">${escapeHtml(log.college)}</td>
+            <td style="font-size: 0.85rem;">${escapeHtml(log.facilitator_name) || '<em style="color:#94a3b8">TBA</em>'}</td>
+            <td style="font-size: 0.85rem;">${escapeHtml(log.venue)}</td>
+            <td style="font-size: 0.82rem; max-width: 180px; word-break: break-word;">${escapeHtml(reasonNotes)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function exportDecisionLogsCsv() {
+    const exportBtn = document.getElementById('export-decision-logs-btn');
+    if (!exportBtn) return;
+
+    const filter = document.getElementById('decision-log-filter')?.value || 'all';
+    const originalText = exportBtn.textContent;
+    exportBtn.disabled = true;
+    exportBtn.textContent = 'Exporting...';
+
+    try {
+        let url = 'api.php?action=export_decision_logs_csv';
+        if (filter !== 'all') url += `&decision=${encodeURIComponent(filter)}`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+            let message = 'Failed to export decision logs.';
+            try {
+                const payload = await response.json();
+                message = payload.message || message;
+            } catch (parseErr) { }
+            throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `decision_logs_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        notify('Decision logs exported successfully');
+    } catch (err) {
+        console.error(err);
+        notify(err.message || 'Failed to export decision logs', 'error');
+    } finally {
+        exportBtn.disabled = false;
+        exportBtn.textContent = originalText;
     }
 }

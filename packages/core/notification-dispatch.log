@@ -124,3 +124,16 @@
 [2026-04-18 09:26:23] Email FAILED for manalo.jullian@student.auf.edu.ph | Subject: Library Appointment Confirmation | Error: SMTP Error: Could not authenticate.
 [2026-04-18 09:26:57] Email FAILED for manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: CONFIRMED | Error: SMTP Error: Could not authenticate.
 [2026-04-18 09:28:34] Email sent to manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: COMPLETED
+<<<<<<< Updated upstream
+[2026-04-27 09:14:48] Email sent to manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: CONFIRMED
+=======
+[2026-04-27 08:57:20] Email sent to venturina.galvin@student.auf.edu.ph | Subject: Appointment Update: PENDING
+[2026-04-27 09:00:37] Email sent to manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: COMPLETED
+[2026-04-27 09:02:02] Email sent to manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: COMPLETED
+[2026-04-27 09:03:52] Email sent to venturina.galvin@student.auf.edu.ph | Subject: Appointment Update: PENDING
+[2026-04-27 09:04:31] Email sent to venturina.galvin@student.auf.edu.ph | Subject: Appointment Update: CANCELLED
+[2026-04-27 09:05:48] Email sent to garoudesu21@gmail.com | Subject: Appointment Update: COMPLETED
+>>>>>>> Stashed changes
+[2026-04-27 12:11:31] Appointment update email skipped. Session/email not found for session_id=900000
+[2026-04-27 12:12:29] Email sent to julliancmanalo@gmail.com | Subject: Appointment Update: CONFIRMED
+[2026-04-27 12:13:14] Email sent to Test@student.auf.edu.ph | Subject: Appointment Update: CONFIRMED

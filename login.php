@@ -209,11 +209,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .register-panel {
-            margin-top: 0.9rem;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.9rem;
-            background: #f8fafc;
             display: none;
         }
 
@@ -240,6 +235,153 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 0.65rem 0.75rem;
             font-size: 0.8rem;
             line-height: 1.35;
+        }
+
+        /* Registration Modal Overlay */
+        .register-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .register-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .register-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 0;
+        }
+
+        .register-modal {
+            position: relative;
+            z-index: 1;
+            width: min(560px, 100%);
+            max-height: 90vh;
+            overflow-y: auto;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18), 0 8px 20px rgba(15, 23, 42, 0.08);
+            padding: 2rem;
+            transform: translateY(20px) scale(0.97);
+            transition: transform 0.3s ease;
+        }
+
+        .register-overlay.active .register-modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .register-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+        }
+
+        .register-modal-header h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+        .register-modal-header p {
+            margin: 0.2rem 0 0;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .register-close-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1.2rem;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .register-close-btn:hover {
+            background: #f1f5f9;
+            color: var(--text);
+            border-color: #94a3b8;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .field select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem 0.85rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            background: #fff;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            color: var(--text);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.85rem center;
+            padding-right: 2.5rem;
+        }
+
+        .field select:focus {
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .form-section-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin: 0.6rem 0 0.5rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .form-section-label:first-of-type {
+            border-top: none;
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        @media (max-width: 500px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .register-modal {
+                padding: 1.4rem;
+            }
         }
     </style>
 </head>
@@ -274,61 +416,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <button class="btn-link" id="toggle-register-panel" type="button">Create Account Request</button>
 
-        <div class="register-panel" id="register-panel">
+        <p class="hint">Use your account from the system users table.</p>
+    </div>
+
+    <!-- Registration Modal Overlay -->
+    <div class="register-overlay" id="register-overlay">
+        <div class="register-backdrop" id="register-backdrop"></div>
+        <div class="register-modal">
+            <div class="register-modal-header">
+                <div>
+                    <h2>Student Account Request</h2>
+                    <p>Fill out the form below to request access</p>
+                </div>
+                <button class="register-close-btn" id="register-close-btn" type="button">&times;</button>
+            </div>
+
             <p class="register-disclaimer">If you are a library staff or library facilitator, please contact an admin to add your custom account.</p>
+
             <form id="register-request-form" novalidate>
-                <div class="field">
-                    <label for="reg-name">Full Name</label>
-                    <input id="reg-name" type="text" required>
-                </div>
+                <div class="form-section-label">Personal Information</div>
 
                 <div class="field">
-                    <label for="reg-student-number">Student Number (optional)</label>
-                    <input id="reg-student-number" type="text">
+                    <label for="reg-name">Full Name <span style="color: var(--danger);">*</span></label>
+                    <input id="reg-name" type="text" placeholder="e.g. Juan Dela Cruz" required>
                 </div>
 
-                <div class="field">
-                    <label for="reg-email">Email</label>
-                    <input id="reg-email" type="email" required>
+                <div class="form-row">
+                    <div class="field">
+                        <label for="reg-email">Email <span style="color: var(--danger);">*</span></label>
+                        <input id="reg-email" type="email" placeholder="you@email.com" required>
+                    </div>
+                    <div class="field">
+                        <label for="reg-password">Password <span style="color: var(--danger);">*</span></label>
+                        <input id="reg-password" type="password" placeholder="Create a password" required>
+                    </div>
                 </div>
 
-                <div class="field">
-                    <label for="reg-password">Password</label>
-                    <input id="reg-password" type="password" required>
+                <div class="form-section-label">Academic Information</div>
+
+                <div class="form-row">
+                    <div class="field">
+                        <label for="reg-student-number">Student ID</label>
+                        <input id="reg-student-number" type="text" placeholder="e.g. 24-1021-948">
+                    </div>
+                    <div class="field">
+                        <label for="reg-year-level">Year Level</label>
+                        <select id="reg-year-level">
+                            <option value="">Select year level</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
+                            <option value="Graduate">Graduate</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="field">
-                    <label for="reg-department">Department</label>
-                    <select id="reg-department" required style="width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 0.85rem; font-family: inherit; font-size: 0.95rem; background: #fff;">
-                        <option value="">Select department</option>
-                        <?php foreach ($departments as $dept): ?>
-                            <option value="<?= (int) $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="form-row">
+                    <div class="field">
+                        <label for="reg-course">Course</label>
+                        <input id="reg-course" type="text" placeholder="e.g. BSIT, BSCS, BSN">
+                    </div>
+                    <div class="field">
+                        <label for="reg-program">Program</label>
+                        <input id="reg-program" type="text" placeholder="e.g. Information Technology">
+                    </div>
                 </div>
 
-                <button class="btn-submit" id="register-submit-btn" type="submit">Submit Request</button>
+                <div class="form-row">
+                    <div class="field">
+                        <label for="reg-section">Section</label>
+                        <input id="reg-section" type="text" placeholder="e.g. A, B, C">
+                    </div>
+                    <div class="field">
+                        <label for="reg-department">Department <span style="color: var(--danger);">*</span></label>
+                        <select id="reg-department" required>
+                            <option value="">Select department</option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?= (int) $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-submit" id="register-submit-btn" type="submit" style="margin-top: 0.5rem;">Submit Account Request</button>
             </form>
             <div class="register-status" id="register-status"></div>
         </div>
-
-        <p class="hint">Use your account from the system users table.</p>
     </div>
 
     <script>
         const toggleRegisterBtn = document.getElementById('toggle-register-panel');
-        const registerPanel = document.getElementById('register-panel');
+        const registerOverlay = document.getElementById('register-overlay');
+        const registerBackdrop = document.getElementById('register-backdrop');
+        const registerCloseBtn = document.getElementById('register-close-btn');
         const registerForm = document.getElementById('register-request-form');
         const registerStatus = document.getElementById('register-status');
         const registerSubmitBtn = document.getElementById('register-submit-btn');
 
-        if (toggleRegisterBtn && registerPanel) {
-            toggleRegisterBtn.addEventListener('click', () => {
-                const isOpen = registerPanel.style.display === 'block';
-                registerPanel.style.display = isOpen ? 'none' : 'block';
-                toggleRegisterBtn.textContent = isOpen ? 'Create Account Request' : 'Hide Account Request Form';
-            });
+        function openRegisterModal() {
+            if (registerOverlay) registerOverlay.classList.add('active');
         }
+
+        function closeRegisterModal() {
+            if (registerOverlay) registerOverlay.classList.remove('active');
+        }
+
+        if (toggleRegisterBtn) {
+            toggleRegisterBtn.addEventListener('click', openRegisterModal);
+        }
+
+        if (registerCloseBtn) {
+            registerCloseBtn.addEventListener('click', closeRegisterModal);
+        }
+
+        if (registerBackdrop) {
+            registerBackdrop.addEventListener('click', closeRegisterModal);
+        }
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeRegisterModal();
+        });
 
         if (registerForm) {
             registerForm.addEventListener('submit', async (event) => {
@@ -339,11 +549,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     student_number: document.getElementById('reg-student-number')?.value.trim() || '',
                     email: document.getElementById('reg-email')?.value.trim() || '',
                     password: document.getElementById('reg-password')?.value || '',
-                    department_id: document.getElementById('reg-department')?.value || ''
+                    department_id: document.getElementById('reg-department')?.value || '',
+                    year_level: document.getElementById('reg-year-level')?.value || '',
+                    course: document.getElementById('reg-course')?.value.trim() || '',
+                    program: document.getElementById('reg-program')?.value.trim() || '',
+                    section: document.getElementById('reg-section')?.value.trim() || ''
                 };
 
                 if (!payload.name || !payload.email || !payload.password || !payload.department_id) {
-                    registerStatus.textContent = 'Please complete all required fields.';
+                    registerStatus.textContent = 'Please complete all required fields (Name, Email, Password, Department).';
                     registerStatus.className = 'register-status error';
                     return;
                 }
@@ -374,7 +588,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     registerStatus.className = 'register-status error';
                 } finally {
                     registerSubmitBtn.disabled = false;
-                    registerSubmitBtn.textContent = 'Submit Request';
+                    registerSubmitBtn.textContent = 'Submit Account Request';
                 }
             });
         }

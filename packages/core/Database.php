@@ -207,6 +207,7 @@ class Database
         $this->ensureColumn('sessions', 'cancelled_date_time', 'TEXT');
         $this->ensureColumn('sessions', 'cancelled_by', 'TEXT');
         $this->ensureColumn('sessions', 'evaluation_notes', 'TEXT');
+        $this->ensureColumn('sessions', 'archived_at', 'TEXT');
 
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS department_facilitators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -275,6 +276,26 @@ class Database
             FOREIGN KEY(session_id) REFERENCES sessions(id)
         )");
 
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS decision_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id INTEGER,
+            decision TEXT NOT NULL,
+            decided_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            appointment_type TEXT,
+            topic TEXT,
+            facilitator_name TEXT,
+            requester_name TEXT,
+            requester_email TEXT,
+            college TEXT,
+            venue TEXT,
+            appointment_date TEXT,
+            appointment_end TEXT,
+            mode TEXT,
+            cancellation_reason TEXT,
+            evaluation_notes TEXT,
+            FOREIGN KEY(session_id) REFERENCES sessions(id)
+        )");
+
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS registration_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_number TEXT,
@@ -317,6 +338,14 @@ class Database
         $this->ensureColumn('registration_requests', 'reviewed_by', 'INTEGER');
         $this->ensureColumn('registration_requests', 'reviewed_at', 'TEXT');
         $this->ensureColumn('registration_requests', 'created_at', 'TEXT DEFAULT CURRENT_TIMESTAMP');
+        $this->ensureColumn('registration_requests', 'year_level', 'TEXT');
+        $this->ensureColumn('registration_requests', 'course', 'TEXT');
+        $this->ensureColumn('registration_requests', 'program', 'TEXT');
+        $this->ensureColumn('registration_requests', 'section', 'TEXT');
+        $this->ensureColumn('users', 'year_level', 'TEXT');
+        $this->ensureColumn('users', 'course', 'TEXT');
+        $this->ensureColumn('users', 'program', 'TEXT');
+        $this->ensureColumn('users', 'section', 'TEXT');
         $this->ensureSessionLogsForeignKey();
     }
 

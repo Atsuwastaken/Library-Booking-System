@@ -356,7 +356,7 @@ if ($action === 'confirm_booking') {
     $sessionId = $data['session_id'] ?? 0;
     $specialRequests = $data['special_requests'] ?? '';
     $userId = requireAuthenticatedUserId();
-    
+
     $success = $service->confirmBooking($sessionId, $userId, $specialRequests);
     echo json_encode(['success' => $success]);
     exit;
@@ -511,9 +511,9 @@ if ($action === 'advanced_booking') {
     $requesterDepartment = $data['department'] ?? '';
     $topic = $data['topic'] ?? 'General Consultation';
     $customRequestor = $data['custom_requestor'] ?? null;
-    
+
     $userId = requireAuthenticatedUserId();
-    
+
     $requestDetails = [
         'name' => $name,
         'email' => $email,

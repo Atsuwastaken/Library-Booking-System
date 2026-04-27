@@ -88,6 +88,56 @@ if ($action === 'export_session_logs_csv') {
     exit;
 }
 
+if ($action === 'get_decision_logs') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
+    $decision = trim((string) ($_GET['decision'] ?? ''));
+    $logs = $service->getDecisionLogs($decision !== '' ? $decision : null);
+    echo json_encode(['success' => true, 'logs' => $logs]);
+    exit;
+}
+
+if ($action === 'export_decision_logs_csv') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
+    $decision = trim((string) ($_GET['decision'] ?? ''));
+    $logs = $service->getDecisionLogs($decision !== '' ? $decision : null);
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="decision_logs_' . date('Ymd_His') . '.csv"');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['ID', 'Session ID', 'Decision', 'Decided At', 'Type', 'Topic', 'Facilitator', 'Requester', 'Email', 'College', 'Venue', 'Appointment Date', 'Appointment End', 'Mode', 'Reason', 'Notes']);
+
+    foreach ($logs as $row) {
+        fputcsv($out, [
+            $row['id'] ?? '',
+            $row['session_id'] ?? '',
+            $row['decision'] ?? '',
+            $row['decided_at'] ?? '',
+            $row['appointment_type'] ?? '',
+            $row['topic'] ?? '',
+            $row['facilitator_name'] ?? '',
+            $row['requester_name'] ?? '',
+            $row['requester_email'] ?? '',
+            $row['college'] ?? '',
+            $row['venue'] ?? '',
+            $row['appointment_date'] ?? '',
+            $row['appointment_end'] ?? '',
+            $row['mode'] ?? '',
+            $row['cancellation_reason'] ?? '',
+            $row['evaluation_notes'] ?? ''
+        ]);
+    }
+
+    fclose($out);
+    exit;
+}
+
 if ($action === 'submit_registration') {
     $data = json_decode(file_get_contents('php://input'), true);
     $studentNumber = trim((string) ($data['student_number'] ?? ''));
@@ -95,6 +145,10 @@ if ($action === 'submit_registration') {
     $email = trim((string) ($data['email'] ?? ''));
     $password = (string) ($data['password'] ?? '');
     $departmentId = (int) ($data['department_id'] ?? 0);
+    $yearLevel = isset($data['year_level']) ? trim((string) $data['year_level']) : null;
+    $course = isset($data['course']) ? trim((string) $data['course']) : null;
+    $program = isset($data['program']) ? trim((string) $data['program']) : null;
+    $section = isset($data['section']) ? trim((string) $data['section']) : null;
 
     if ($name === '' || $email === '' || $password === '' || $departmentId <= 0) {
         echo json_encode(['success' => false, 'message' => 'Name, email, password, and department are required.']);
@@ -102,7 +156,7 @@ if ($action === 'submit_registration') {
     }
 
     try {
-        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'student', null);
+        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'student', null, $yearLevel, $course, $program, $section);
         echo json_encode([
             'success' => $success,
             'message' => $success
@@ -598,6 +652,66 @@ if ($action === 'get_facilitator_sessions') {
     $facId = $_GET['facilitator_id'] ?? 0;
     $sessions = $service->getFacilitatorSessions($facId);
     echo json_encode(['success' => true, 'sessions' => $sessions]);
+    exit;
+}
+
+if ($action === 'archive_appointments') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $sessionIds = $data['session_ids'] ?? [];
+
+    if (empty($sessionIds) || !is_array($sessionIds)) {
+        echo json_encode(['success' => false, 'message' => 'No appointments selected.']);
+        exit;
+    }
+
+    $success = $service->archiveAppointments($sessionIds);
+    echo json_encode(['success' => $success]);
+    exit;
+}
+
+if ($action === 'unarchive_appointments') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $sessionIds = $data['session_ids'] ?? [];
+
+    if (empty($sessionIds) || !is_array($sessionIds)) {
+        echo json_encode(['success' => false, 'message' => 'No appointments selected.']);
+        exit;
+    }
+
+    $success = $service->unarchiveAppointments($sessionIds);
+    echo json_encode(['success' => $success]);
+    exit;
+}
+
+if ($action === 'get_archived_appointments') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
+    $archived = $service->getArchivedAppointments();
+    echo json_encode(['success' => true, 'appointments' => $archived]);
+    exit;
+}
+
+if ($action === 'delete_archived_appointment') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $sessionId = (int) ($data['session_id'] ?? 0);
+
+    if ($sessionId <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid session id.']);
+        exit;
+    }
+
+    $success = $service->deleteArchivedAppointment($sessionId);
+    echo json_encode(['success' => $success]);
     exit;
 }
 

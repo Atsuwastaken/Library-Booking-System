@@ -546,6 +546,12 @@ class BookingService {
     }
 
     public function getAppointments($userId, $isAdmin = false, $facilitatorId = null) {
+        // Piggyback auto-archive and auto-purge on admin loads
+        if ($isAdmin) {
+            $this->autoArchiveStaleAppointments();
+            $this->autoPurgeOldArchived();
+        }
+
         $sql = "
                  SELECT s.id as session_id, s.type as appointment_type, s.topic, s.date_time, s.end_time, s.mode, s.venue,
                    s.status as booking_status, s.special_requests,
@@ -561,17 +567,20 @@ class BookingService {
             LEFT JOIN users u ON s.user_id = u.id
                         LEFT JOIN department rd ON s.requester_department_id = rd.id
                         LEFT JOIN department ud ON u.department_id = ud.id
+            WHERE s.archived_at IS NULL
         ";
         
         $params = [];
         if (!$isAdmin) {
-            $sql .= " WHERE s.user_id = ?";
+            $sql .= " AND (s.user_id = ?";
             $params[] = $userId;
 
             if (!empty($facilitatorId)) {
                 $sql .= " OR s.facilitator_id = ?";
                 $params[] = $facilitatorId;
             }
+
+            $sql .= ")";
         }
         
         $sql .= " ORDER BY s.date_time ASC ";
@@ -598,6 +607,10 @@ class BookingService {
             $hasChanges = $stmt->rowCount() > 0;
             if ($hasChanges) {
                 $this->logSessionEvent((int) $sessionId, 'modified');
+                // Log decision for CONFIRMED / DECLINED
+                if (in_array($normalizedStatus, ['CONFIRMED', 'DECLINED'], true)) {
+                    $this->logDecision((int) $sessionId, $normalizedStatus, $reasonToSave, $notesToSave);
+                }
             }
 
             $this->db->commit();
@@ -723,6 +736,63 @@ class BookingService {
                                    WHERE datetime(log_date) >= datetime(?)
                                    ORDER BY datetime(log_date) DESC, id DESC");
         $stmt->execute([$fromDateTime]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /* Decision Logs — only CONFIRMED / DECLINED */
+
+    private function logDecision($sessionId, $decision, $reason = null, $notes = null)
+    {
+        $stmt = $this->db->prepare("SELECT s.id,
+                                   s.appointment_type, s.topic, s.venue, s.mode,
+                                   s.date_time, s.end_time,
+                                   COALESCE(f.name, '') AS facilitator_name,
+                                   COALESCE(u.name, s.requester_name, '') AS requester_name,
+                                   COALESCE(u.email, s.requester_email, '') AS requester_email,
+                                   COALESCE(d.name, rd.name, '') AS college
+                                   FROM sessions s
+                                   LEFT JOIN facilitators f ON s.facilitator_id = f.id
+                                   LEFT JOIN users u ON s.user_id = u.id
+                                   LEFT JOIN department d ON u.department_id = d.id
+                                   LEFT JOIN department rd ON s.requester_department_id = rd.id
+                                   WHERE s.id = ?");
+        $stmt->execute([$sessionId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return;
+
+        $ins = $this->db->prepare("INSERT INTO decision_logs
+            (session_id, decision, decided_at, appointment_type, topic, facilitator_name, requester_name, requester_email, college, venue, appointment_date, appointment_end, mode, cancellation_reason, evaluation_notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $ins->execute([
+            $sessionId,
+            $decision,
+            date('Y-m-d H:i:s'),
+            $row['appointment_type'] ?? '',
+            $row['topic'] ?? '',
+            $row['facilitator_name'] ?? '',
+            $row['requester_name'] ?? '',
+            $row['requester_email'] ?? '',
+            $row['college'] ?? '',
+            $row['venue'] ?? '',
+            $row['date_time'] ?? '',
+            $row['end_time'] ?? '',
+            $row['mode'] ?? '',
+            ($reason !== null && $reason !== '') ? $reason : null,
+            ($notes !== null && $notes !== '') ? $notes : null
+        ]);
+    }
+
+    public function getDecisionLogs($decision = null)
+    {
+        $sql = "SELECT * FROM decision_logs";
+        $params = [];
+        if ($decision !== null && $decision !== '' && $decision !== 'all') {
+            $sql .= " WHERE UPPER(decision) = ?";
+            $params[] = strtoupper($decision);
+        }
+        $sql .= " ORDER BY datetime(decided_at) DESC, id DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -863,7 +933,7 @@ class BookingService {
         return $normalized;
     }
 
-    public function submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, $requestedRole = 'student', $requestedFacilitatorId = null)
+    public function submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, $requestedRole = 'student', $requestedFacilitatorId = null, $yearLevel = null, $course = null, $program = null, $section = null)
     {
         $normalizedEmail = strtolower(trim((string) $email));
         if ($normalizedEmail === '') {
@@ -886,8 +956,8 @@ class BookingService {
         $facilitatorId = !empty($requestedFacilitatorId) ? (int) $requestedFacilitatorId : null;
         $deptId = !empty($departmentId) ? (int) $departmentId : null;
 
-        $stmt = $this->db->prepare("INSERT INTO registration_requests (student_number, name, email, password, department_id, requested_role, requested_facilitator_id, status, created_at)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)");
+        $stmt = $this->db->prepare("INSERT INTO registration_requests (student_number, name, email, password, department_id, requested_role, requested_facilitator_id, year_level, course, program, section, status, created_at)
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)");
         return $stmt->execute([
             trim((string) $studentNumber),
             trim((string) $name),
@@ -895,7 +965,11 @@ class BookingService {
             (string) $password,
             $deptId,
             $roleToStore,
-            $facilitatorId
+            $facilitatorId,
+            $yearLevel !== null ? trim((string) $yearLevel) : null,
+            $course !== null ? trim((string) $course) : null,
+            $program !== null ? trim((string) $program) : null,
+            $section !== null ? trim((string) $section) : null
         ]);
     }
 
@@ -995,8 +1069,8 @@ class BookingService {
             $roleToSave = $this->normalizeRole($role ?: ($request['requested_role'] ?? 'student'));
             $deptToSave = !empty($departmentId) ? (int) $departmentId : (!empty($request['department_id']) ? (int) $request['department_id'] : null);
 
-            $createStmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id)
-                                              VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $createStmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id, year_level, course, program, section)
+                                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $createStmt->execute([
                 trim((string) ($request['student_number'] ?? '')),
                 trim((string) ($request['name'] ?? '')),
@@ -1004,7 +1078,11 @@ class BookingService {
                 $roleToSave,
                 (string) ($request['password'] ?? ''),
                 $deptToSave,
-                null
+                null,
+                $request['year_level'] ?? null,
+                $request['course'] ?? null,
+                $request['program'] ?? null,
+                $request['section'] ?? null
             ]);
 
             $newUserId = (int) $this->db->lastInsertId();
@@ -1207,5 +1285,129 @@ class BookingService {
                                    ORDER BY s.date_time ASC");
         $stmt->execute([$facilitatorId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /* ========== Appointment Archiving ========== */
+
+    public function archiveAppointments($sessionIds)
+    {
+        if (empty($sessionIds) || !is_array($sessionIds)) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($sessionIds), '?'));
+        $now = date('Y-m-d H:i:s');
+        $stmt = $this->db->prepare("UPDATE sessions SET archived_at = ? WHERE id IN ($placeholders) AND archived_at IS NULL");
+        $params = array_merge([$now], array_map('intval', $sessionIds));
+        $stmt->execute($params);
+
+        // Log the archive event for each session
+        foreach ($sessionIds as $sid) {
+            $this->logSessionEvent((int) $sid, 'archived');
+        }
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function unarchiveAppointments($sessionIds)
+    {
+        if (empty($sessionIds) || !is_array($sessionIds)) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($sessionIds), '?'));
+        $stmt = $this->db->prepare("UPDATE sessions SET archived_at = NULL WHERE id IN ($placeholders) AND archived_at IS NOT NULL");
+        $params = array_map('intval', $sessionIds);
+        $stmt->execute($params);
+
+        foreach ($sessionIds as $sid) {
+            $this->logSessionEvent((int) $sid, 'unarchived');
+        }
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function getArchivedAppointments()
+    {
+        $this->autoArchiveStaleAppointments();
+        $this->autoPurgeOldArchived();
+
+        $sql = "
+            SELECT s.id as session_id, s.type as appointment_type, s.topic, s.date_time, s.end_time, s.mode, s.venue,
+                   s.status as booking_status, s.special_requests,
+                   s.requester_name, s.requester_email, s.requester_department_id,
+                   rd.name as requester_department,
+                   s.notification_minutes, s.cancellation_reason, s.cancelled_date_time, s.cancelled_by, s.evaluation_notes,
+                   s.archived_at,
+                   f.name as facilitator_name, f.id as facilitator_id,
+                   COALESCE(u.name, s.requester_name, 'External Requestor') as student_name,
+                   COALESCE(u.email, s.requester_email, '') as student_email,
+                   COALESCE(ud.name, rd.name, '') as student_department
+            FROM sessions s
+            LEFT JOIN facilitators f ON s.facilitator_id = f.id
+            LEFT JOIN users u ON s.user_id = u.id
+            LEFT JOIN department rd ON s.requester_department_id = rd.id
+            LEFT JOIN department ud ON u.department_id = ud.id
+            WHERE s.archived_at IS NOT NULL
+            ORDER BY s.archived_at DESC
+        ";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function deleteArchivedAppointment($sessionId)
+    {
+        $sessionId = (int) $sessionId;
+
+        // Log the permanent deletion before removing
+        $this->logSessionEvent($sessionId, 'permanently_deleted');
+
+        $stmt = $this->db->prepare("DELETE FROM sessions WHERE id = ? AND archived_at IS NOT NULL");
+        $stmt->execute([$sessionId]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function autoArchiveStaleAppointments()
+    {
+        $cutoff = date('Y-m-d H:i:s', strtotime('-1 month'));
+        $now = date('Y-m-d H:i:s');
+
+        // Auto-archive PENDING appointments older than 1 month
+        $stmt = $this->db->prepare("UPDATE sessions
+            SET archived_at = ?
+            WHERE UPPER(status) = 'PENDING'
+              AND archived_at IS NULL
+              AND datetime(date_time) < datetime(?)");
+        $stmt->execute([$now, $cutoff]);
+
+        // Also auto-archive CANCELLED/DECLINED/COMPLETED older than 1 month
+        $stmt2 = $this->db->prepare("UPDATE sessions
+            SET archived_at = ?
+            WHERE UPPER(status) IN ('CANCELLED', 'DECLINED', 'COMPLETED')
+              AND archived_at IS NULL
+              AND datetime(date_time) < datetime(?)");
+        $stmt2->execute([$now, $cutoff]);
+    }
+
+    public function autoPurgeOldArchived()
+    {
+        $cutoff = date('Y-m-d H:i:s', strtotime('-4 months'));
+
+        // Find sessions to purge so we can log them first
+        $findStmt = $this->db->prepare("SELECT id FROM sessions
+            WHERE archived_at IS NOT NULL
+              AND datetime(archived_at) < datetime(?)");
+        $findStmt->execute([$cutoff]);
+        $toPurge = $findStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        if (!empty($toPurge)) {
+            foreach ($toPurge as $sid) {
+                $this->logSessionEvent((int) $sid, 'auto_purged');
+            }
+
+            $placeholders = implode(',', array_fill(0, count($toPurge), '?'));
+            $delStmt = $this->db->prepare("DELETE FROM sessions WHERE id IN ($placeholders)");
+            $delStmt->execute(array_map('intval', $toPurge));
+        }
     }
 }

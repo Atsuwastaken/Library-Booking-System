@@ -1,7 +1,7 @@
 <header>
     <div class="logo">
         <img src="img/auf-logo.png" alt="AUF Logo"
-            style="height: 60px; margin-right: 18px; background: white; padding: 6px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+            style="height: 44px; margin-right: 14px; background: white; padding: 4px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
         Library Booking System
     </div>
     <div class="header-nav">

@@ -124,3 +124,4 @@
 [2026-04-18 09:26:23] Email FAILED for manalo.jullian@student.auf.edu.ph | Subject: Library Appointment Confirmation | Error: SMTP Error: Could not authenticate.
 [2026-04-18 09:26:57] Email FAILED for manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: CONFIRMED | Error: SMTP Error: Could not authenticate.
 [2026-04-18 09:28:34] Email sent to manalo.jullian@student.auf.edu.ph | Subject: Appointment Update: COMPLETED
+[2026-04-28 02:47:26] Email sent to julliancmanalo@gmail.com | Subject: Appointment Update: CONFIRMED

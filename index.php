@@ -44,7 +44,7 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
     <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="layout-fixed">
     <!-- Bold gradient background -->
     <div class="app-bg"></div>
     <div class="app-bg-accent"></div>
@@ -57,63 +57,65 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
         <!-- Content: Left Info Panel + Right Main Area -->
         <div class="content-split">
 
-            <!-- ===== LEFT INFO PANEL ===== -->
-            <aside class="info-panel">
-                <!-- Account Section -->
-                <div class="ip-section">
-                    <div class="ip-section-label">Account</div>
-                    <div class="ip-account">
-                        <div class="ip-avatar"><?= htmlspecialchars($studentInitials) ?></div>
-                        <div class="ip-user-details">
-                            <strong><?= htmlspecialchars($firstName) ?></strong>
-                            <span><?= htmlspecialchars($studentEmail) ?></span>
+            <!-- ===== LEFT COLUMN WIDGETS ===== -->
+            <aside class="left-widgets" style="width: 320px; min-width: 320px; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; background: #f8f9fc; border-right: 1px solid var(--border); overflow-y: auto;">
+                
+                <!-- Account Widget -->
+                <div class="dashboard-widget" style="background: white; padding: 2rem 1.5rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="ip-avatar" style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #4f6ef7, #7c9dff); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem;">
+                            <?= htmlspecialchars($studentInitials) ?>
+                        </div>
+                        <div>
+                            <strong style="display: block; font-size: 1.1rem; color: var(--text-primary);"><?= htmlspecialchars($firstName) ?></strong>
+                            <span style="color: var(--text-secondary); font-size: 0.85rem;"><?= htmlspecialchars($studentEmail) ?></span>
                         </div>
                     </div>
-                    <div class="ip-account-actions">
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                         <?php if ($isAdminUser): ?>
-                            <a href="admin.php" class="ip-action-link">
+                            <a href="admin.php" class="btn btn-outline btn-sm" style="width: 100%; justify-content: center;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                                 Admin Panel
                             </a>
                         <?php endif; ?>
-                        <a href="logout.php" class="ip-action-link ip-signout">
+                        <a href="logout.php" class="btn btn-muted btn-sm" style="width: 100%; justify-content: center; color: var(--danger);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                             Sign Out
                         </a>
                     </div>
                 </div>
 
-                <!-- Appointments Status Section -->
-                <div class="ip-section ip-section-grow">
-                    <div class="ip-section-label">My Appointments</div>
-                    <div id="sidebar-bookings-list" class="ip-bookings-list">
-                        <div class="ip-loading">Loading appointments...</div>
-                    </div>
-                </div>
-
-                <!-- Quick Navigation -->
-                <div class="ip-section ip-section-nav">
-                    <div class="ip-section-label">Navigation</div>
-                    <nav class="ip-nav tabs-nav">
-                        <button class="tab-btn active" data-tab="explore">
+                <!-- Navigation Widget -->
+                <div class="dashboard-widget" style="background: white; padding: 2rem 1.25rem 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow-sm);">
+                    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.75rem; letter-spacing: 0.05em;">Navigation</div>
+                    <nav class="tabs-nav" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <button class="tab-btn active" data-tab="explore" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border: none; background: transparent; border-radius: 6px; width: 100%; text-align: left; cursor: pointer; color: var(--text-primary); font-weight: 600;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             Explore & Book
                         </button>
-                        <button class="tab-btn" data-tab="appointments">
+                        <button class="tab-btn" data-tab="appointments" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border: none; background: transparent; border-radius: 6px; width: 100%; text-align: left; cursor: pointer; color: var(--text-secondary); font-weight: 500;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
                             My Appointments
                         </button>
-                        <button class="tab-btn" data-tab="facilitators">
+                        <button class="tab-btn" data-tab="facilitators" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border: none; background: transparent; border-radius: 6px; width: 100%; text-align: left; cursor: pointer; color: var(--text-secondary); font-weight: 500;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                             Facilitators
                         </button>
                         <?php if ($isFacilitator): ?>
-                        <button class="tab-btn" data-tab="my-sessions">
+                        <button class="tab-btn" data-tab="my-sessions" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border: none; background: transparent; border-radius: 6px; width: 100%; text-align: left; cursor: pointer; color: var(--text-secondary); font-weight: 500;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"></path><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                             My Sessions
                         </button>
                         <?php endif; ?>
                     </nav>
+                </div>
+
+                <!-- My Appts Widget -->
+                <div class="dashboard-widget" style="background: white; padding: 2rem 1.25rem 1.25rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); flex: 1; display: flex; flex-direction: column;">
+                    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.75rem; letter-spacing: 0.05em;">My Appointments</div>
+                    <div id="sidebar-bookings-list" style="display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; flex: 1;">
+                        <div style="color: var(--text-secondary); font-size: 0.85rem; padding: 1rem 0; text-align: center;">Loading appointments...</div>
+                    </div>
                 </div>
             </aside>
 
@@ -122,8 +124,9 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
                 <div class="tab-content">
                     <!-- Explore Tab Pane -->
                     <div class="tab-pane active" id="explore-pane">
-                        <div class="calendar-column" style="max-width: 100%;">
-                            <div class="calendar-card">
+                        <div class="calendar-column" style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; max-width: 100%;">
+                            <!-- Calendar Widget -->
+                            <div class="dashboard-widget calendar-card" style="background: white; padding: 2rem 1.5rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin: 0; border: none;">
                                 <div class="calendar-top">
                                     <div class="calendar-title-group">
                                         <h2 id="calendar-month-year">Month Year</h2>
@@ -158,8 +161,8 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
                                 </div>
                             </div>
 
-                            <!-- Today's Schedule Timeline -->
-                            <div class="timeline-card">
+                            <!-- Timeline Widget -->
+                            <div class="dashboard-widget timeline-card" style="background: white; padding: 2rem 1.5rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin: 0; border: none;">
                                 <div class="timeline-header">
                                     <h3>Today's Schedule Timeline</h3>
                                     <span class="current-date-pill" id="timeline-date">Friday, April 17, 2026</span>
@@ -291,20 +294,20 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
             const r = await fetch('api.php?action=my_appointments');
             const d = await r.json();
             const list = d.appointments || d.data || [];
-            if (!list.length) { el.innerHTML = '<div class="ip-empty">No appointments yet.</div>'; return; }
+            if (!list.length) { el.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.85rem; padding: 1rem 0; text-align: center;">No appointments yet.</div>'; return; }
             el.innerHTML = list.slice(0, 10).map(a => {
                 const s = (a.status || 'pending').toLowerCase();
-                const cls = s === 'confirmed' ? 'confirmed' : (s === 'cancelled' || s === 'declined') ? 'cancelled' : 'pending';
+                const cls = s === 'confirmed' ? 'success' : (s === 'cancelled' || s === 'declined') ? 'danger' : 'warning';
                 const label = s.charAt(0).toUpperCase() + s.slice(1);
-                return `<div class="ip-booking-row">
-                    <div class="ip-booking-meta">
-                        <strong>${a.topic || a.session_type || 'Booking'}</strong>
-                        <span>${a.date || a.appointment_date || ''}</span>
+                return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f8f9fc; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="display: flex; flex-direction: column;">
+                        <strong style="color: var(--text-primary); font-size: 0.85rem;">${a.topic || a.session_type || 'Booking'}</strong>
+                        <span style="color: var(--text-secondary); font-size: 0.75rem;">${a.date || a.appointment_date || ''}</span>
                     </div>
-                    <span class="ip-badge ip-badge-${cls}">${label}</span>
+                    <span style="font-size: 0.65rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 99px; background: var(--${cls}); color: white;">${label}</span>
                 </div>`;
             }).join('');
-        } catch(e) { el.innerHTML = '<div class="ip-empty">Could not load.</div>'; }
+        } catch(e) { el.innerHTML = '<div style="color: var(--danger); font-size: 0.85rem; padding: 1rem 0; text-align: center;">Could not load.</div>'; }
     })();
     </script>
 </body>

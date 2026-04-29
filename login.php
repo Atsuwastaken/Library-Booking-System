@@ -594,6 +594,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 transform: translateY(0);
             }
         }
+
+        /* === MODAL STYLES === */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--panel-solid);
+            width: min(90%, 500px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .btn-close:hover {
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 2rem;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
@@ -635,63 +707,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="divider"><span>or</span></div>
 
-        <button class="btn-link" id="toggle-register-panel" type="button">Create Account Request</button>
-
-        <div class="register-panel" id="register-panel">
-            <p class="register-disclaimer">If you are a library staff or library facilitator, please contact an admin to
-                add your custom account.</p>
-            <form id="register-request-form" novalidate>
-                <div class="field">
-                    <label for="reg-name">Full Name</label>
-                    <input id="reg-name" type="text" required>
-                </div>
-
-                <div class="field">
-                    <label for="reg-student-number">Student Number (optional)</label>
-                    <input id="reg-student-number" type="text">
-                </div>
-
-                <div class="field">
-                    <label for="reg-email">Email</label>
-                    <input id="reg-email" type="email" required>
-                </div>
-
-                <div class="field">
-                    <label for="reg-password">Password</label>
-                    <input id="reg-password" type="password" required>
-                </div>
-
-                <div class="field">
-                    <label for="reg-department">Department</label>
-                    <select id="reg-department" required
-                        style="width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 0.78rem 0.9rem; font-family: inherit; font-size: 0.95rem; background: rgba(255,255,255,0.7); outline: none; transition: border-color 0.25s ease, box-shadow 0.25s ease;">
-                        <option value="">Select department</option>
-                        <?php foreach ($departments as $dept): ?>
-                            <option value="<?= (int) $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <button class="btn-submit" id="register-submit-btn" type="submit">Register</button>
-            </form>
-            <div class="register-status" id="register-status"></div>
-        </div>
+        <button class="btn-link" id="btn-open-register" type="button">Create Account</button>
 
         <p class="hint">Use your account from the system users table.</p>
     </div>
 
+    <!-- Registration Modal -->
+    <div class="modal-overlay" id="register-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Account</h2>
+                <button type="button" class="btn-close" id="btn-close-register">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="register-disclaimer">If you are a library staff or library facilitator, please contact an admin to add your custom account.</p>
+                <form id="register-request-form" novalidate>
+                    <div class="field">
+                        <label for="reg-name">Full Name</label>
+                        <input id="reg-name" type="text" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="reg-student-number">Student Number (optional)</label>
+                        <input id="reg-student-number" type="text">
+                    </div>
+
+                    <div class="field">
+                        <label for="reg-email">Email</label>
+                        <input id="reg-email" type="email" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="reg-password">Password</label>
+                        <input id="reg-password" type="password" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="reg-department">Department</label>
+                        <select id="reg-department" required
+                            style="width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 0.78rem 0.9rem; font-family: inherit; font-size: 0.95rem; background: rgba(255,255,255,0.7); outline: none; transition: border-color 0.25s ease, box-shadow 0.25s ease;">
+                            <option value="">Select department</option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?= (int) $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <button class="btn-submit" id="register-submit-btn" type="submit">Register</button>
+                </form>
+                <div class="register-status" id="register-status"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const toggleRegisterBtn = document.getElementById('toggle-register-panel');
-        const registerPanel = document.getElementById('register-panel');
+        const openRegisterBtn = document.getElementById('btn-open-register');
+        const closeRegisterBtn = document.getElementById('btn-close-register');
+        const registerModal = document.getElementById('register-modal');
         const registerForm = document.getElementById('register-request-form');
         const registerStatus = document.getElementById('register-status');
         const registerSubmitBtn = document.getElementById('register-submit-btn');
 
-        if (toggleRegisterBtn && registerPanel) {
-            toggleRegisterBtn.addEventListener('click', () => {
-                const isOpen = registerPanel.style.display === 'block';
-                registerPanel.style.display = isOpen ? 'none' : 'block';
-                toggleRegisterBtn.textContent = isOpen ? 'Create Account Request' : 'Hide Account Request Form';
+        function openModal() {
+            registerModal.style.display = 'flex';
+            // trigger reflow
+            registerModal.offsetHeight;
+            registerModal.classList.add('active');
+        }
+
+        function closeModal() {
+            registerModal.classList.remove('active');
+            setTimeout(() => {
+                registerModal.style.display = 'none';
+            }, 300);
+        }
+
+        if (openRegisterBtn && registerModal) {
+            openRegisterBtn.addEventListener('click', openModal);
+        }
+
+        if (closeRegisterBtn) {
+            closeRegisterBtn.addEventListener('click', closeModal);
+        }
+
+        // Close when clicking outside modal content
+        if (registerModal) {
+            registerModal.addEventListener('click', (e) => {
+                if (e.target === registerModal) {
+                    closeModal();
+                }
             });
         }
 

@@ -670,37 +670,7 @@ $studentPhone = $studentPhone ?? '';
 
             <!-- Tab: Users Management -->
             <div id="tab-users" class="admin-tab-content" style="display: none;">
-                <div class="admin-card users-admin-shell">
-                    <div class="users-admin-head">
-                        <div>
-                            <h3 style="margin: 0;">Pending Registration Requests</h3>
-                            <p class="users-admin-subtitle">Review account requests and assign the proper role before approving access.</p>
-                        </div>
-                        <div class="users-admin-head-actions">
-                            <div class="users-admin-counts">
-                                <span class="users-admin-chip" id="pending-requests-count">0 pending</span>
-                            </div>
-                            <button class="btn btn-outline btn-sm" id="refresh-users-admin" type="button">Refresh</button>
-                        </div>
-                    </div>
-                    <div class="users-admin-table-wrap">
-                    <table class="admin-table users-admin-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Student No.</th>
-                                <th>Department</th>
-                                <th>Approval Settings</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="registration-requests-tbody">
-                            <tr><td colspan="6" style="padding: 1rem; color: #94a3b8;">Loading registration requests...</td></tr>
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
+
 
                 <div class="admin-card users-admin-shell">
                     <div class="users-admin-head">

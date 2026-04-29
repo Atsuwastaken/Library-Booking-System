@@ -106,8 +106,8 @@ if ($action === 'submit_registration') {
         echo json_encode([
             'success' => $success,
             'message' => $success
-                ? 'Registration request sent. Please wait for admin approval.'
-                : 'Unable to submit registration request.'
+                ? 'Registration successful. You may now log in.'
+                : 'Unable to register.'
         ]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);

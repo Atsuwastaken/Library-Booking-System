@@ -876,25 +876,19 @@ class BookingService {
             throw new Exception('An account with this email already exists.');
         }
 
-        $existsPendingStmt = $this->db->prepare("SELECT 1 FROM registration_requests WHERE LOWER(email) = ? AND UPPER(status) = 'PENDING' LIMIT 1");
-        $existsPendingStmt->execute([$normalizedEmail]);
-        if ($existsPendingStmt->fetchColumn()) {
-            throw new Exception('A pending registration request already exists for this email.');
-        }
-
         $roleToStore = $this->normalizeRole($requestedRole);
         $facilitatorId = !empty($requestedFacilitatorId) ? (int) $requestedFacilitatorId : null;
         $deptId = !empty($departmentId) ? (int) $departmentId : null;
 
-        $stmt = $this->db->prepare("INSERT INTO registration_requests (student_number, name, email, password, department_id, requested_role, requested_facilitator_id, status, created_at)
-                                   VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)");
+        $stmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id)
+                                          VALUES (?, ?, ?, ?, ?, ?, ?)");
         return $stmt->execute([
             trim((string) $studentNumber),
             trim((string) $name),
             $normalizedEmail,
+            $roleToStore,
             (string) $password,
             $deptId,
-            $roleToStore,
             $facilitatorId
         ]);
     }

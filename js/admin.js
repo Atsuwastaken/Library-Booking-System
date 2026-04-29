@@ -281,11 +281,13 @@ async function handleCreateAdminUser(formEl, config) {
     try {
         const res = await fetch('api.php?action=add_user_admin', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 name,
                 email,
                 password,
                 role: config.role,
+                department_id: departmentId,
                 facilitator_enabled: config.facilitatorEnabled
             })
         });
@@ -353,13 +355,10 @@ async function loadUsersAdminData() {
             ? appointmentsData.appointments
             : [];
 
-        const pendingCountEl = document.getElementById('pending-requests-count');
-        if (pendingCountEl) pendingCountEl.textContent = `${adminRegistrationRequestsCache.length} pending`;
 
         const usersCountEl = document.getElementById('users-total-count');
         if (usersCountEl) usersCountEl.textContent = `${adminUsersCache.length} users`;
 
-        renderRegistrationRequestsTable();
         renderUsersAdminTable();
     } catch (error) {
         console.error('Failed to load admin users tab data:', error);
@@ -368,7 +367,6 @@ async function loadUsersAdminData() {
         facilitatorTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #ef4444;">Failed to load users.</td></tr>';
         adminTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #ef4444;">Failed to load users.</td></tr>';
         completedTbody.innerHTML = '<tr><td colspan="6" style="padding: 1rem; color: #ef4444;">Failed to load completed appointments.</td></tr>';
-        requestsTbody.innerHTML = '<tr><td colspan="6" style="padding: 1rem; color: #ef4444;">Failed to load registration requests.</td></tr>';
     }
 }
 
@@ -586,6 +584,7 @@ async function approveRegistrationRequest(requestId, rowEl) {
     try {
         const res = await fetch('api.php?action=approve_registration_request', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 request_id: requestId,
                 role,
@@ -613,6 +612,7 @@ async function rejectRegistrationRequest(requestId) {
     try {
         const res = await fetch('api.php?action=reject_registration_request', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ request_id: requestId, reason })
         });
         const data = await res.json();

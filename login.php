@@ -672,7 +672,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                 </div>
 
-                <button class="btn-submit" id="register-submit-btn" type="submit">Submit Request</button>
+                <button class="btn-submit" id="register-submit-btn" type="submit">Register</button>
             </form>
             <div class="register-status" id="register-status"></div>
         </div>
@@ -714,7 +714,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 registerSubmitBtn.disabled = true;
-                registerSubmitBtn.textContent = 'Submitting...';
+                registerSubmitBtn.textContent = 'Registering...';
                 registerStatus.textContent = '';
                 registerStatus.className = 'register-status';
 
@@ -727,19 +727,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     const data = await res.json();
 
                     if (data.success) {
-                        registerStatus.textContent = data.message || 'Registration request submitted.';
+                        registerStatus.textContent = data.message || 'Registration successful.';
                         registerStatus.className = 'register-status success';
                         registerForm.reset();
                     } else {
-                        registerStatus.textContent = data.message || 'Failed to submit registration request.';
+                        registerStatus.textContent = data.message || 'Failed to register.';
                         registerStatus.className = 'register-status error';
                     }
                 } catch (error) {
-                    registerStatus.textContent = 'Failed to submit registration request.';
+                    registerStatus.textContent = 'Failed to register.';
                     registerStatus.className = 'register-status error';
                 } finally {
                     registerSubmitBtn.disabled = false;
-                    registerSubmitBtn.textContent = 'Submit Request';
+                    registerSubmitBtn.textContent = 'Register';
                 }
             });
         }

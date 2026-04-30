@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
 :root {
   --primary-color: #0d1117;
   --secondary: #4f6ef7;
@@ -76,9 +78,9 @@ body.layout-fixed {
   position: relative;
   z-index: 5;
   background: #ffffff;
-  border-radius: 24px;
-  margin: 2rem;
-  height: calc(100vh - 4rem);
+  margin: 0;
+  height: 100vh;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   box-shadow:
@@ -294,118 +296,7 @@ body.layout-fixed {
   border-color: var(--danger) !important;
 }
 
-/* === HEADER (inside card) === */
-header {
-  height: 72px;
-  background: linear-gradient(135deg, #2541b2 0%, #3a56d4 50%, #4f6ef7 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 2rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  border-radius: 24px 24px 0 0;
-}
 
-header.scrolled {
-  height: 64px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.logo {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  letter-spacing: -0.01em;
-  padding-right: 1.5rem;
-  margin-right: 0.5rem;
-  position: relative;
-}
-
-/* Panel divider after logo */
-.logo::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 15%;
-  height: 70%;
-  width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent);
-}
-
-.header-nav {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.main-nav {
-  display: flex;
-  gap: 2rem;
-  margin-right: 1rem;
-  padding-right: 1.5rem;
-  position: relative;
-}
-
-/* Panel divider after nav */
-.main-nav::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 15%;
-  height: 70%;
-  width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.25), transparent);
-}
-
-.main-nav a {
-  text-decoration: none;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 600;
-  transition: all 0.2s ease;
-  padding: 0.35rem 0;
-  position: relative;
-}
-
-/* Subtle dot separator between nav links */
-.main-nav a + a::before {
-  content: '';
-  position: absolute;
-  left: -1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.main-nav a:hover,
-.main-nav a.active {
-  color: #ffffff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-}
-
-.main-nav a.admin-return-link {
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 999px;
-  padding: 0.4rem 0.85rem;
-  color: #ffffff;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.main-nav a.admin-return-link:hover {
-  background: rgba(255, 255, 255, 0.18);
-  text-shadow: none;
-}
 
 .avatar {
   width: 46px;
@@ -2930,3 +2821,162 @@ header.scrolled {
     transform: translateY(0);
   }
 }
+
+/* === MINIMAL MINI CALENDAR === */
+.mini-calendar-card {
+  background: transparent;
+  color: #1F2328;
+  padding: 2rem;
+  width: 100%;
+  max-width: 320px;
+  margin: 0;
+  border-right: none;
+  min-height: auto;
+  box-shadow: none;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+}
+
+.mini-calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.mini-calendar-date {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1F2328;
+  text-transform: capitalize;
+}
+
+.mini-nav-btn {
+  background: none;
+  border: none;
+  color: #656d76;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.mini-nav-btn:hover {
+  color: var(--secondary);
+}
+
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+
+.mini-day-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #9ca3af; /* Light grey */
+  text-transform: uppercase;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.05em;
+}
+
+.mini-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4b5563;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 2px;
+}
+
+.mini-day:hover:not(.empty):not(.restricted) {
+  background: #f3f4f6;
+}
+
+.mini-day.selected {
+  background: #4f6ef7 !important; /* Blue circle from image */
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(79, 110, 247, 0.3);
+}
+
+.mini-day.today:not(.selected) {
+  color: #4f6ef7;
+  font-weight: 700;
+}
+
+.mini-day.restricted {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.mini-day.empty {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.mini-calendar-footer {
+  display: none; /* Removed as per the minimal design in the second image */
+}
+
+/* === MINI INSTRUCTOR CARDS === */
+.mini-instructor-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.mini-instructor-card:hover {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.mini-instructor-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #64748b;
+  font-size: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.mini-instructor-info {
+  flex: 1;
+}
+
+.mini-instructor-info h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.mini-instructor-info p {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 2px 0 0 0;
+}
+

@@ -232,15 +232,6 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
 
 
 
-    // Scroll Awareness Logic
-    const header = document.querySelector('header');
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
-        }
-    });
 
     // Tab Switching Logic
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -396,8 +387,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         }
 
         renderCalendarGrid();
-        updateTodayTimeline();
         loadPublicSeminars();
+        loadMiniInstructors();
     }
 
     let allSeminars = [];
@@ -408,26 +399,27 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             if (!res.ok) throw new Error('Network response was not ok');
             const data = await res.json();
 
-            if (data.success && data.seminars && data.seminars.length > 0) {
+            if (data.success && data.seminars) {
                 allSeminars = data.seminars;
                 const list = document.getElementById('seminars-list');
                 if (list) {
+                    if (allSeminars.length === 0) {
+                        list.innerHTML = '<div style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 1rem 0;">No upcoming events scheduled.</div>';
+                        return;
+                    }
                     list.innerHTML = '';
-                    allSeminars.forEach(s => {
+                    allSeminars.slice(0, 4).forEach(s => { // Show top 4
                         const date = new Date(s.date_time);
                         const card = document.createElement('div');
                         card.className = 'seminar-item-card';
                         card.innerHTML = `
-                            <div class="sem-date-badge">
-                                <span class="sem-month">${date.toLocaleString('default', { month: 'short' })}</span>
-                                <span class="sem-day">${date.getDate()}</span>
+                            <div class="seminar-date-badge">
+                                <span class="mon">${date.toLocaleString('default', { month: 'short' })}</span>
+                                <span class="day">${date.getDate()}</span>
                             </div>
-                            <div class="sem-details">
-                                <h4>${s.title}</h4>
-                                <div class="sem-meta">
-                                    <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${s.speaker}</span>
-                                    <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${s.venue}</span>
-                                </div>
+                            <div class="seminar-info">
+                                <h4>${s.topic}</h4>
+                                <p>${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${s.venue || 'TBA'}</p>
                             </div>
                         `;
                         list.appendChild(card);
@@ -441,6 +433,47 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         } catch (e) {
             console.error(e);
         }
+    }
+
+    async function loadMiniInstructors() {
+        const list = document.getElementById('mini-instructors-list');
+        if (!list) return;
+
+        try {
+            const res = await fetch('api.php?action=get_facilitators');
+            const data = await res.json();
+
+            if (data.success && Array.isArray(data.facilitators)) {
+                list.innerHTML = '';
+                const instructors = data.facilitators.slice(0, 5); 
+                
+                if (instructors.length === 0) {
+                    list.innerHTML = '<div style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 1rem 0;">No instructors available.</div>';
+                    return;
+                }
+
+                instructors.forEach(f => {
+                    const initials = f.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                    const card = document.createElement('div');
+                    card.className = 'mini-instructor-card';
+                    card.innerHTML = `
+                        <div class="mini-instructor-avatar">${initials}</div>
+                        <div class="mini-instructor-info">
+                            <h4>${f.name}</h4>
+                            <p>${f.position || 'Library Instructor'}</p>
+                        </div>
+                        <div style="color: var(--secondary); opacity: 0.5;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </div>
+                    `;
+                    card.onclick = () => {
+                        const btn = document.getElementById('view-facilitators-btn');
+                        if (btn) btn.click();
+                    };
+                    list.appendChild(card);
+                });
+            }
+        } catch (e) { }
     }
 
     function renderCalendarGrid() {
@@ -1713,8 +1746,6 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     document.getElementById('success-modal').classList.add('active');
                     await updateCalendar(true);
 
-                    // Re-sync timeline if on hero
-                    if (typeof updateTodayTimeline === 'function') updateTodayTimeline();
 
                 } else {
                     alert('Error: ' + (data.message || 'The system could not establish the link.'));
@@ -2069,199 +2100,123 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         } catch (e) { }
     };
 
-    function updateTodayTimeline() {
-        const timelineTrack = document.getElementById('today-timeline-track');
-        const eventsContainer = document.getElementById('timeline-events-container');
-        const dateDisplay = document.getElementById('timeline-date');
-        const confirmedBars = document.getElementById('timeline-confirmed-bars');
 
-        if (!timelineTrack || !eventsContainer) return;
+    // === MINIMAL MINI CALENDAR LOGIC ===
+    let miniCurrentMonth = new Date().getMonth();
+    let miniCurrentYear = new Date().getFullYear();
 
-        // Start/End of timeline logic
-        const now = new Date();
-        const day = now.getDay();
-        let startHour, startMin, endHour, endMin;
+    function renderMiniCalendar() {
+        const miniGrid = document.getElementById('mini-calendar-grid');
+        const miniDateDisplay = document.getElementById('mini-current-date');
+        if (!miniGrid) return;
 
-        const dateStr = now.toLocaleDateString([], {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        if (dateDisplay) dateDisplay.textContent = dateStr;
-
-        const axisLabels = document.querySelector('.timeline-axis');
-        const ticksContainer = document.querySelector('.timeline-ticks');
-
-        if (day === 0) {
-            if (axisLabels) {
-                axisLabels.innerHTML = '<span class="axis-label" style="left: 50%; transform: translateX(-50%);">Closed on Sunday</span>';
-            }
-            if (ticksContainer) ticksContainer.innerHTML = '';
-            eventsContainer.innerHTML = '';
-            if (confirmedBars) {
-                confirmedBars.innerHTML = '<div class="timeline-empty">Library is closed today (Sunday).</div>';
-            }
-            return;
-        }
-
-        if (day >= 1 && day <= 5) { // Mon-Fri
-            startHour = 7; startMin = 30;
-            endHour = 19; endMin = 0;
-        } else { // Weekend (Sat/Sun)
-            startHour = 8; startMin = 0;
-            endHour = 17; endMin = 0;
-        }
-
-        const startMins = startHour * 60 + startMin;
-        const endMins = endHour * 60 + endMin;
-        const totalMinutes = endMins - startMins;
-
-        // Update Axis Labels Programmatically
-        if (axisLabels) {
-            const startStr = day >= 1 && day <= 5 ? "7:30 AM" : "8:00 AM";
-            const midStr = day >= 1 && day <= 5 ? "1:00 PM" : "12:00 PM";
-            const endStr = day >= 1 && day <= 5 ? "7:00 PM" : "5:00 PM";
-            
-            const midMins = day >= 1 && day <= 5 ? 13 * 60 : 12 * 60;
-            const midPos = ((midMins - startMins) / totalMinutes) * 100;
-            
-            axisLabels.innerHTML = `
-                <span class="axis-label" style="left: 0;">${startStr}</span>
-                <span class="axis-label" style="left: ${midPos}%; transform: translateX(-50%);">${midStr}</span>
-                <span class="axis-label" style="left: 100%; transform: translateX(-100%);">${endStr}</span>
-            `;
-        }
-
-        // Generate Ticks
-        if (ticksContainer) {
-            ticksContainer.innerHTML = '';
-            const hoursCount = Math.ceil(totalMinutes / 60);
-            for (let i = 0; i <= hoursCount; i++) {
-                const tick = document.createElement('div');
-                tick.className = 'tick';
-                ticksContainer.appendChild(tick);
-            }
-        }
-
-        // Filter sessions for today
-        const todayStr = formatLocalDate(now);
-        const todaySessions = allSessions.filter(s =>
-            s.date_time.startsWith(todayStr) && s.booking_status === 'CONFIRMED'
-        );
-        todaySessions.sort((a, b) => new Date(a.date_time) - new Date(b.date_time));
-
-        eventsContainer.innerHTML = '';
-
-        // Add Lunch Break Zone (12PM - 1PM)
-        const lunchStart = 12 * 60;
-        const lunchEnd = 13 * 60;
-        const lPos = ((lunchStart - startMins) / totalMinutes) * 100;
-        const lWidth = ((lunchEnd - lunchStart) / totalMinutes) * 100;
+        miniGrid.innerHTML = '';
         
-        if (lPos + lWidth > 0 && lPos < 100) {
-            const lunchZone = document.createElement('div');
-            lunchZone.className = 'timeline-lunch-zone';
-            lunchZone.style.left = `${Math.max(0, lPos)}%`;
-            lunchZone.style.width = `${Math.min(100 - lPos, lWidth)}%`;
-            
-            const lTooltip = document.createElement('div');
-            lTooltip.className = 'timeline-tooltip';
-            lTooltip.innerHTML = '<strong>Lunch Break</strong><br>12:00 PM - 1:00 PM';
-            lunchZone.appendChild(lTooltip);
-            
-            lunchZone.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isActive = lunchZone.classList.contains('active');
-                document.querySelectorAll('.timeline-lunch-zone, .timeline-session-span, .timeline-event-marker').forEach(m => m.classList.remove('active'));
-                if (!isActive) lunchZone.classList.add('active');
-            });
-            eventsContainer.appendChild(lunchZone);
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        if (miniDateDisplay) {
+            miniDateDisplay.textContent = `${monthNames[miniCurrentMonth]} ${miniCurrentYear}`;
         }
 
-        todaySessions.forEach(s => {
-            const sDate = new Date(s.date_time);
-            const eDate = s.end_time ? new Date(s.end_time) : new Date(sDate.getTime() + 60 * 60 * 1000);
-            
-            const sMins = sDate.getHours() * 60 + sDate.getMinutes();
-            const eMins = eDate.getHours() * 60 + eDate.getMinutes();
-
-            if (sMins < endMins && eMins > startMins) {
-                const leftPos = Math.max(0, ((sMins - startMins) / totalMinutes) * 100);
-                const rightPos = Math.min(100, ((eMins - startMins) / totalMinutes) * 100);
-                const widthPct = rightPos - leftPos;
-
-                const span = document.createElement('div');
-                span.className = `timeline-session-span booked`;
-                span.style.left = `${leftPos}%`;
-                span.style.width = `${Math.max(widthPct, 1)}%`;
-
-                const timeRange = `${sDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${eDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-                
-                const tooltip = document.createElement('div');
-                tooltip.className = 'timeline-tooltip';
-                tooltip.innerHTML = `<strong>${s.topic}</strong><br>${timeRange}<br>${s.facilitator_name || 'TBA'}`;
-
-                span.appendChild(tooltip);
-                
-                span.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const isActive = span.classList.contains('active');
-                    document.querySelectorAll('.timeline-lunch-zone, .timeline-session-span, .timeline-event-marker').forEach(m => m.classList.remove('active'));
-                    if (!isActive) span.classList.add('active');
-                });
-
-                eventsContainer.appendChild(span);
-            }
+        // Days of week header
+        ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+            const el = document.createElement('div');
+            el.className = 'mini-day-name';
+            el.textContent = day; // Use full 3 letters as in second image
+            miniGrid.appendChild(el);
         });
 
-        if (confirmedBars) {
-            confirmedBars.innerHTML = '';
+        const firstDay = new Date(miniCurrentYear, miniCurrentMonth, 1).getDay();
+        const daysInMonth = new Date(miniCurrentYear, miniCurrentMonth + 1, 0).getDate();
+        const prevMonthLastDay = new Date(miniCurrentYear, miniCurrentMonth, 0).getDate();
 
-            if (todaySessions.length === 0) {
-                confirmedBars.innerHTML = '<div class="timeline-empty">No confirmed appointments for today.</div>';
-            } else {
-                todaySessions.forEach(s => {
-                    const sDate = new Date(s.date_time);
-                    const eDate = s.end_time ? new Date(s.end_time) : new Date(sDate.getTime() + 60 * 60 * 1000);
+        const now = new Date();
+        const todayStr = formatLocalDate(now);
+        const gapDate = new Date();
+        gapDate.setDate(now.getDate() + 2);
 
-                    const sMins = sDate.getHours() * 60 + sDate.getMinutes();
-                    const eMins = eDate.getHours() * 60 + eDate.getMinutes();
-                    if (sMins >= endMins || eMins <= startMins) return;
-
-                    const leftPos = Math.max(0, ((sMins - startMins) / totalMinutes) * 100);
-                    const rightPos = Math.min(100, ((eMins - startMins) / totalMinutes) * 100);
-                    const widthPct = Math.max(rightPos - leftPos, 1);
-
-                    const timeRange = `${sDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${eDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-                    const row = document.createElement('div');
-                    row.className = 'timeline-confirmed-row';
-                    row.innerHTML = `
-                        <div class="timeline-confirmed-meta">
-                            <strong>${s.topic}</strong>
-                            <span>${timeRange}</span>
-                        </div>
-                        <div class="timeline-confirmed-track">
-                            <div class="timeline-confirmed-bar" style="left:${leftPos}%; width:${widthPct}%;" title="${s.topic} • ${timeRange} • ${s.facilitator_name || 'TBA'}"></div>
-                        </div>
-                    `;
-                    confirmedBars.appendChild(row);
-                });
-
-                if (!confirmedBars.children.length) {
-                    confirmedBars.innerHTML = '<div class="timeline-empty">No confirmed appointments within today\'s timeline window.</div>';
-                }
-            }
+        // Previous month padding cells
+        for (let i = firstDay - 1; i >= 0; i--) {
+            const dayNum = prevMonthLastDay - i;
+            const el = document.createElement('div');
+            el.className = 'mini-day empty';
+            el.textContent = dayNum;
+            miniGrid.appendChild(el);
         }
 
-        // Global click to clear tooltips
-        if (!window.timelineGlobalClickAttached) {
-            document.addEventListener('click', () => {
-                document.querySelectorAll('.timeline-lunch-zone, .timeline-session-span, .timeline-event-marker').forEach(m => m.classList.remove('active'));
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'mini-day';
+            dayEl.textContent = i;
+            
+            const thisDate = new Date(miniCurrentYear, miniCurrentMonth, i);
+            const dateStr = formatLocalDate(thisDate);
+            
+            if (dateStr === todayStr) dayEl.classList.add('today');
+            if (dateStr === selectedDate) dayEl.classList.add('selected');
+            
+            // Sunday restriction or past/near-past
+            if (thisDate < gapDate || thisDate.getDay() === 0) dayEl.classList.add('restricted');
+
+            dayEl.addEventListener('click', () => {
+                if (dayEl.classList.contains('restricted')) {
+                    if (thisDate.getDay() === 0) {
+                        alert('Library is closed on Sundays.');
+                    } else {
+                        alert('Bookings must be made 2 days in advance.');
+                    }
+                    return;
+                }
+                
+                selectedDate = dateStr;
+                document.querySelectorAll('.mini-day').forEach(d => d.classList.remove('selected'));
+                dayEl.classList.add('selected');
+                
+                if (typeof openAdvancedBooking === 'function') {
+                    openAdvancedBooking(dateStr);
+                }
             });
-            window.timelineGlobalClickAttached = true;
+
+            miniGrid.appendChild(dayEl);
+        }
+
+        // Next month padding cells
+        const totalUsed = firstDay + daysInMonth;
+        const paddingNeeded = 42 - totalUsed;
+        for (let i = 1; i <= paddingNeeded; i++) {
+            const el = document.createElement('div');
+            el.className = 'mini-day empty';
+            el.textContent = i;
+            miniGrid.appendChild(el);
         }
     }
+
+    // Attach Mini Nav Listeners
+    document.getElementById('mini-prev-month')?.addEventListener('click', () => {
+        miniCurrentMonth--;
+        if (miniCurrentMonth < 0) {
+            miniCurrentMonth = 11;
+            miniCurrentYear--;
+        }
+        renderMiniCalendar();
+    });
+
+    document.getElementById('mini-next-month')?.addEventListener('click', () => {
+        miniCurrentMonth++;
+        if (miniCurrentMonth > 11) {
+            miniCurrentMonth = 0;
+            miniCurrentYear++;
+        }
+        renderMiniCalendar();
+    });
+
+    renderMiniCalendar();
+
+    // Hook into updateCalendar
+    const originalUpdateCalendar = updateCalendar;
+    updateCalendar = async function(forceFetch = false) {
+        await originalUpdateCalendar(forceFetch);
+        renderMiniCalendar();
+    };
 
     // Initial load
     updateCalendar(true);

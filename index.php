@@ -52,7 +52,6 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
     <!-- Main App Card -->
     <div class="app-card">
         <!-- Top Header -->
-        <?php include 'components/header.php'; ?>
 
         <!-- Content: Left Info Panel + Right Main Area -->
         <div class="content-split">
@@ -91,7 +90,7 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
                     <nav class="tabs-nav" style="display: flex; flex-direction: column; gap: 0.25rem;">
                         <button class="tab-btn active" data-tab="explore" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border: none; background: transparent; border-radius: 6px; width: 100%; text-align: left; cursor: pointer; color: var(--text-primary); font-weight: 600;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            Explore & Book
+                            Calendar
                         </button>
                         <button class="tab-btn" data-tab="appointments" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border: none; background: transparent; border-radius: 6px; width: 100%; text-align: left; cursor: pointer; color: var(--text-secondary); font-weight: 500;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
@@ -124,85 +123,56 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
                 <div class="tab-content">
                     <!-- Explore Tab Pane -->
                     <div class="tab-pane active" id="explore-pane">
-                        <div class="calendar-column" style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; max-width: 100%;">
-                            <!-- Calendar Widget -->
-                            <div class="dashboard-widget calendar-card" style="background: white; padding: 2rem 1.5rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin: 0; border: none;">
-                                <div class="calendar-top">
-                                    <div class="calendar-title-group">
-                                        <h2 id="calendar-month-year">Month Year</h2>
-                                        <p id="selected-date-label" style="font-size: 0.85rem; color: #64748b; font-weight: 500; margin-top: 0.2rem;">Showing schedule for October 24, 2023</p>
-                                    </div>
-                                    <div class="calendar-controls">
-                                        <button class="btn btn-outline btn-sm" id="toggle-view-btn" title="Toggle Week/Month View">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg>
-                                            <span>View</span>
+                        <div class="calendar-column" style="max-width: 100%; display: flex; align-items: flex-start; justify-content: flex-start; padding: 2.5rem; gap: 2.5rem; min-height: 80vh;">
+                            <!-- COLUMN 1: CALENDAR & EVENTS -->
+                            <div style="display: flex; flex-direction: column; gap: 2.5rem; width: 340px;">
+                                <!-- Minimal Mini Calendar Widget -->
+                                <div class="mini-calendar-card" style="padding: 1.5rem; width: 100%; max-width: 100%;">
+                                    <div class="mini-calendar-header">
+                                        <button class="mini-nav-btn" id="mini-prev-month">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                                         </button>
-                                        <button class="btn btn-outline btn-sm" id="prev-month">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                                        </button>
-                                        <button class="btn btn-primary btn-sm" id="today-btn">Today</button>
-                                        <button class="btn btn-outline btn-sm" id="next-month">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                        <div class="mini-calendar-date" id="mini-current-date">Month Year</div>
+                                        <button class="mini-nav-btn" id="mini-next-month">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                                         </button>
                                     </div>
+                                    <div class="mini-calendar-grid" id="mini-calendar-grid">
+                                        <!-- Populate via JS -->
+                                    </div>
                                 </div>
-                                <div class="calendar-days-header">
-                                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-                                </div>
-                                <div id="calendar-grid" class="calendar-grid-cells">
-                                    <!-- Populate via JS -->
-                                </div>
-                                
-                                <div class="calendar-legend" style="margin-top: 0.8rem; border-top: 1px solid var(--border); padding-top: 0.8rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-                                    <div class="legend-item" style="font-size: 0.75rem; gap: 0.4rem; display: flex; align-items: center;"><span class="dot dot-available" style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span> Available</div>
-                                    <div class="legend-item" style="font-size: 0.75rem; gap: 0.4rem; display: flex; align-items: center;"><span class="dot dot-booked" style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%;"></span> Booked</div>
-                                    <div class="legend-item" style="font-size: 0.75rem; gap: 0.4rem; display: flex; align-items: center;"><span class="dot dot-closed" style="width: 8px; height: 8px; background: #64748b; border-radius: 50%;"></span> Closed</div>
-                                    <div class="legend-item" style="font-size: 0.75rem; gap: 0.4rem; display: flex; align-items: center;"><span class="tag" style="font-size: 0.65rem; background: #f3e8ff; color: #9333ea; padding: 2px 4px; border-radius: 3px; border: 1px solid #e9d5ff;">Seminar</span> Institutional Seminar</div>
+
+                                <!-- Library Events Widget -->
+                                <div class="dashboard-widget" style="background: white; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); width: 100%; margin-top: 0;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                                        <div style="background: #eff6ff; color: #2563eb; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                                        </div>
+                                        <div>
+                                            <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">Library Events</h3>
+                                            <p style="font-size: 0.8rem; color: #64748b;">Join our latest seminars</p>
+                                        </div>
+                                    </div>
+                                    <div id="seminars-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <div style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 1.5rem 0;">Fetching events...</div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Timeline Widget -->
-                            <div class="dashboard-widget timeline-card" style="background: white; padding: 2rem 1.5rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin: 0; border: none;">
-                                <div class="timeline-header">
-                                    <h3>Today's Schedule Timeline</h3>
-                                    <span class="current-date-pill" id="timeline-date">Friday, April 17, 2026</span>
-                                </div>
-                                <div class="timeline-container">
-                                    <div class="timeline-axis">
-                                        <span class="axis-label" style="left: 0;">8 AM</span>
-                                        <span class="axis-label" style="left: 44.44%; transform: translateX(-50%);">12 PM</span>
-                                        <span class="axis-label" style="left: 100%; transform: translateX(-100%);">5 PM</span>
+                            <!-- COLUMN 2: OUR INSTRUCTORS -->
+                            <div class="dashboard-widget" style="background: white; padding: 2.5rem; border-radius: var(--radius); box-shadow: var(--shadow-sm); flex: 1; max-width: 450px; min-height: 600px;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
+                                    <div style="background: #f0fdf4; color: #16a34a; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                                     </div>
-                                    <div class="timeline-track" id="today-timeline-track">
-                                        <div class="timeline-line"></div>
-                                        <div class="timeline-ticks">
-                                            <div class="tick"></div><div class="tick"></div><div class="tick"></div>
-                                            <div class="tick"></div><div class="tick"></div><div class="tick"></div>
-                                            <div class="tick"></div><div class="tick"></div><div class="tick"></div>
-                                            <div class="tick"></div>
-                                        </div>
-                                        <div id="timeline-events-container"></div>
-                                    </div>
-                                    <div class="timeline-confirmed-section" id="timeline-confirmed-section">
-                                        <div class="timeline-confirmed-label">Confirmed Appointments</div>
-                                        <div class="timeline-confirmed-bars" id="timeline-confirmed-bars">
-                                            <div class="timeline-empty">No confirmed appointments for today.</div>
-                                        </div>
+                                    <div>
+                                        <h3 style="font-size: 1.25rem; font-weight: 700; color: #1e293b;">Our Instructors</h3>
+                                        <p style="font-size: 0.9rem; color: #64748b;">Connect with our staff</p>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Upcoming Seminars -->
-                        <div class="dashboard-card" style="margin-top: 2rem;">
-                            <div class="card-header">
-                                <div class="card-title">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                                    <h3>Upcoming Seminars & Orientation</h3>
+                                <div id="mini-instructors-list" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                    <div style="color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 3rem 0;">Loading instructors...</div>
                                 </div>
-                            </div>
-                            <div id="seminars-list" class="seminars-horizontal-grid">
-                                <div class="loader-container">Fetching seminars...</div>
                             </div>
                         </div>
                     </div>

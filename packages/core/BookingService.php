@@ -192,7 +192,7 @@ class BookingService {
 
     public function getAvailableSessions()
     {
-        $stmt = $this->db->query("SELECT * FROM sessions WHERE status = 'AVAILABLE' ORDER BY date_time ASC");
+        $stmt = $this->db->query("SELECT id, facilitator_id, type, topic, date_time, end_time, mode, venue, status FROM sessions WHERE status IN ('AVAILABLE', 'CONFIRMED') ORDER BY date_time ASC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -438,6 +438,13 @@ class BookingService {
 
     public function createAdvancedBooking($type, $facilitatorId, $topic, $dateTime, $endTime, $mode, $userId, $requestDetails = [], $customRequestor = null)
     {
+        // 1. Facilitator availability check (only for Instructional Programs where facilitator is selected)
+        if (!empty($facilitatorId) && !in_array(strtolower((string) $type), ['seminar', 'orientation'])) {
+            if ($this->hasFacilitatorConflict($facilitatorId, $dateTime, $endTime)) {
+                throw new Exception('The selected facilitator is not available at that time.');
+            }
+        }
+
         $this->db->beginTransaction();
         $effectiveUserId = null;
         $sessionId = null;
@@ -543,6 +550,23 @@ class BookingService {
         }
 
         return true;
+    }
+
+    /**
+     * Checks if a facilitator has any CONFIRMED sessions that overlap with the requested time range.
+     */
+    private function hasFacilitatorConflict($facilitatorId, $startTime, $endTime) {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM sessions 
+            WHERE facilitator_id = ? 
+            AND status = 'CONFIRMED'
+            AND (
+                (date_time < ? AND end_time > ?) -- Existing session starts before new ends and ends after new starts
+            )
+        ");
+        
+        $stmt->execute([$facilitatorId, $endTime, $startTime]);
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     public function getAppointments($userId, $isAdmin = false, $facilitatorId = null) {

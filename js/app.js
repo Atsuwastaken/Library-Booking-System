@@ -1303,7 +1303,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                 if (standardTimeInputs) standardTimeInputs.style.display = 'none';
                 if (timeAxisWrapper) timeAxisWrapper.style.display = 'none';
                 if (wholeDayNotice) wholeDayNotice.style.display = 'flex';
-                if (timeLabel) timeLabel.textContent = 'Time:';
+                if (timeLabel) timeLabel.textContent = 'Time: (Seminars are whole-day events)';
                 if (durationHint) durationHint.textContent = '';
                 if (errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
                 // Set hidden time values to full day for the API
@@ -1378,7 +1378,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             return false;
         }
 
-        // Duration limits for Instructional Program and Orientation
+        // 4. Duration limits for Instructional Program and Orientation
         if (type === 'Instructional Program' || type === 'Orientation') {
             if (diff < 30) {
                 errorEl.textContent = `${type}s must be at least 30 minutes.`;
@@ -1387,6 +1387,31 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             }
             if (diff > 240) {
                 errorEl.textContent = `${type}s cannot exceed 4 hours.`;
+                errorEl.style.display = 'block';
+                return false;
+            }
+        }
+
+        // 5. Facilitator Conflict Check (Instructional Program only)
+        if (type === 'Instructional Program' && selectedFacId) {
+            const conflict = allSessions.find(s => {
+                if (s.facilitator_id != selectedFacId || s.status !== 'CONFIRMED') return false;
+                if (!s.date_time.startsWith(selectedDate)) return false;
+
+                const sTimeStr = s.date_time.split(' ')[1];
+                const eTimeStr = s.end_time ? s.end_time.split(' ')[1] : null;
+                if (!sTimeStr || !eTimeStr) return false;
+
+                const [sh, sm] = sTimeStr.split(':').map(Number);
+                const [eh, em] = eTimeStr.split(':').map(Number);
+                const sMins = sh * 60 + sm;
+                const eMins = eh * 60 + em;
+
+                return (startMins < eMins && endMins > sMins);
+            });
+
+            if (conflict) {
+                errorEl.textContent = 'The selected facilitator is already booked at this time.';
                 errorEl.style.display = 'block';
                 return false;
             }

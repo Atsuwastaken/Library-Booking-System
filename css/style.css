@@ -122,39 +122,81 @@ body.layout-fixed {
   align-items: center;
   gap: 0.75rem;
   padding: 1.35rem 1.15rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
+
 .pl-brand img {
-  width: 40px; height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   background: #fff;
   padding: 3px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
-.pl-brand div { display: flex; flex-direction: column; }
-.pl-brand strong { color: #fff; font-size: 0.9rem; font-weight: 700; line-height: 1.2; }
-.pl-brand span { color: rgba(255,255,255,0.45); font-size: 0.78rem; font-weight: 500; }
+
+.pl-brand div {
+  display: flex;
+  flex-direction: column;
+}
+
+.pl-brand strong {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pl-brand span {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
 
 .pl-account {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.15rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
+
 .pl-avatar {
-  width: 42px; height: 42px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4f6ef7, #7c9dff);
   color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
   flex-shrink: 0;
-  box-shadow: 0 3px 10px rgba(79,110,247,0.3);
+  box-shadow: 0 3px 10px rgba(79, 110, 247, 0.3);
 }
-.pl-user { display: flex; flex-direction: column; min-width: 0; }
-.pl-user strong { color: #fff; font-size: 0.9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pl-user span { color: rgba(255,255,255,0.4); font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.pl-user {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pl-user strong {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pl-user span {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Sidebar Nav */
 .pl-nav {
@@ -162,14 +204,15 @@ body.layout-fixed {
   flex-direction: column;
   padding: 0.6rem 0.65rem;
   gap: 2px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
+
 .pl-nav-btn {
   width: 100%;
   text-align: left;
   padding: 0.65rem 0.8rem;
   border-radius: 8px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.85rem;
   font-weight: 600;
   background: transparent;
@@ -181,12 +224,33 @@ body.layout-fixed {
   transition: all 0.15s ease;
   font-family: inherit;
 }
-.pl-nav-btn:hover { color: #fff; background: rgba(255,255,255,0.07); }
-.pl-nav-btn.active { color: #fff; background: rgba(79,110,247,0.3); }
-.pl-nav-btn.active::after { display: none; }
-.pl-nav-btn svg { opacity: 0.55; flex-shrink: 0; }
-.pl-nav-btn.active svg { opacity: 1; }
-.pl-nav-btn:hover svg { opacity: 0.85; }
+
+.pl-nav-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.pl-nav-btn.active {
+  color: #fff;
+  background: rgba(79, 110, 247, 0.3);
+}
+
+.pl-nav-btn.active::after {
+  display: none;
+}
+
+.pl-nav-btn svg {
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.pl-nav-btn.active svg {
+  opacity: 1;
+}
+
+.pl-nav-btn:hover svg {
+  opacity: 0.85;
+}
 
 /* Sidebar Bookings */
 .pl-bookings {
@@ -195,58 +259,117 @@ body.layout-fixed {
   overflow-y: auto;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.12) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
+
 .pl-bookings h4 {
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 0.65rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 0.5rem;
 }
+
 .pl-booking-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.6rem;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 7px;
   margin-bottom: 3px;
   gap: 0.4rem;
   transition: background 0.12s ease;
 }
-.pl-booking-row:hover { background: rgba(255,255,255,0.09); }
-.pl-booking-info { display: flex; flex-direction: column; min-width: 0; }
-.pl-booking-info strong { color: #fff; font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pl-booking-info span { color: rgba(255,255,255,0.35); font-size: 0.65rem; }
-.pl-badge {
-  font-size: 0.6rem; font-weight: 800;
-  padding: 0.15rem 0.4rem; border-radius: 999px;
-  white-space: nowrap; flex-shrink: 0;
+
+.pl-booking-row:hover {
+  background: rgba(255, 255, 255, 0.09);
 }
-.pl-badge-pending { background: rgba(234,179,8,0.2); color: #fbbf24; }
-.pl-badge-confirmed { background: rgba(34,197,94,0.2); color: #4ade80; }
-.pl-badge-cancelled { background: rgba(239,68,68,0.2); color: #f87171; }
-.pl-booking-empty { color: rgba(255,255,255,0.3); font-size: 0.78rem; text-align: center; padding: 0.75rem 0; }
+
+.pl-booking-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pl-booking-info strong {
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pl-booking-info span {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.65rem;
+}
+
+.pl-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pl-badge-pending {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+
+.pl-badge-confirmed {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.pl-badge-cancelled {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.pl-booking-empty {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 0.75rem 0;
+}
 
 /* Sidebar Bottom */
 .pl-bottom {
   padding: 0.65rem 1.15rem 1rem;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
   gap: 2px;
   margin-top: auto;
 }
+
 .pl-link {
-  display: flex; align-items: center; gap: 0.55rem;
-  padding: 0.55rem 0.7rem; border-radius: 8px;
-  color: rgba(255,255,255,0.55); font-size: 0.82rem; font-weight: 600;
-  text-decoration: none; transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
 }
-.pl-link:hover { color: #fff; background: rgba(79,110,247,0.18); }
-.pl-signout:hover { color: #f87171; background: rgba(239,68,68,0.1); }
+
+.pl-link:hover {
+  color: #fff;
+  background: rgba(79, 110, 247, 0.18);
+}
+
+.pl-signout:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+}
 
 /* --- Right Panel (main content) --- */
 .panel-right {
@@ -321,7 +444,9 @@ body.layout-fixed {
 }
 
 /* User Account Flyout Sidebar - hidden */
-.user-sidebar { display: none; }
+.user-sidebar {
+  display: none;
+}
 
 /* === CONTENT SPLIT: Left panel + Right main === */
 .content-split {
@@ -337,15 +462,15 @@ body.layout-fixed {
   background: linear-gradient(180deg, #162544 0%, #13203d 60%, #0f1a30 100%);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.12) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
 .ip-section {
   padding: 1.1rem 1.15rem;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .ip-section-grow {
@@ -355,7 +480,7 @@ body.layout-fixed {
 }
 
 .ip-section-label {
-  color: rgba(255,255,255,0.35);
+  color: rgba(255, 255, 255, 0.35);
   font-size: 0.65rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -383,7 +508,7 @@ body.layout-fixed {
   font-weight: 800;
   font-size: 1.15rem;
   flex-shrink: 0;
-  box-shadow: 0 3px 10px rgba(79,110,247,0.3);
+  box-shadow: 0 3px 10px rgba(79, 110, 247, 0.3);
 }
 
 .ip-user-details {
@@ -402,7 +527,7 @@ body.layout-fixed {
 }
 
 .ip-user-details span {
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   font-size: 0.75rem;
   white-space: nowrap;
   overflow: hidden;
@@ -421,7 +546,7 @@ body.layout-fixed {
   gap: 0.5rem;
   padding: 0.45rem 0.65rem;
   border-radius: 7px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;
@@ -430,12 +555,12 @@ body.layout-fixed {
 
 .ip-action-link:hover {
   color: #ffffff;
-  background: rgba(79,110,247,0.18);
+  background: rgba(79, 110, 247, 0.18);
 }
 
 .ip-signout:hover {
   color: #f87171;
-  background: rgba(239,68,68,0.1);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* Bookings List */
@@ -450,14 +575,14 @@ body.layout-fixed {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.6rem;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 7px;
   gap: 0.5rem;
   transition: background 0.12s ease;
 }
 
 .ip-booking-row:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .ip-booking-meta {
@@ -476,7 +601,7 @@ body.layout-fixed {
 }
 
 .ip-booking-meta span {
-  color: rgba(255,255,255,0.35);
+  color: rgba(255, 255, 255, 0.35);
   font-size: 0.68rem;
 }
 
@@ -489,19 +614,30 @@ body.layout-fixed {
   flex-shrink: 0;
 }
 
-.ip-badge-pending { background: rgba(234,179,8,0.2); color: #fbbf24; }
-.ip-badge-confirmed { background: rgba(34,197,94,0.2); color: #4ade80; }
-.ip-badge-cancelled { background: rgba(239,68,68,0.2); color: #f87171; }
+.ip-badge-pending {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+
+.ip-badge-confirmed {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.ip-badge-cancelled {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
 
 .ip-empty {
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   font-size: 0.8rem;
   text-align: center;
   padding: 1rem 0;
 }
 
 .ip-loading {
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
   font-size: 0.78rem;
   text-align: center;
   padding: 1rem 0;
@@ -510,7 +646,7 @@ body.layout-fixed {
 /* Info Panel Navigation (vertical tabs) */
 .ip-section-nav {
   margin-top: auto;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
   border-bottom: none;
 }
 
@@ -526,7 +662,7 @@ body.layout-fixed {
   justify-content: flex-start;
   padding: 0.6rem 0.75rem;
   border-radius: 8px;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255, 255, 255, 0.55);
   font-size: 0.82rem;
   font-weight: 600;
   background: transparent;
@@ -541,12 +677,12 @@ body.layout-fixed {
 
 .ip-nav .tab-btn:hover {
   color: #ffffff;
-  background: rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .ip-nav .tab-btn.active {
   color: #ffffff;
-  background: rgba(79,110,247,0.3);
+  background: rgba(79, 110, 247, 0.3);
 }
 
 .ip-nav .tab-btn.active::after {
@@ -648,39 +784,77 @@ body.layout-fixed {
   color: var(--text-primary);
 }
 
-/* Tabs Navigation - hidden in two-panel (sidebar nav replaces) */
+/* Sidebar Navigation Wrapper */
 .tabs-nav {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
+/* Sidebar Tab Buttons */
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
   width: 100%;
-  height: 3px;
-  background: var(--secondary);
-  border-radius: 3px 3px 0 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
-.tab-btn svg {
-  opacity: 0.55;
-  transition: opacity 0.2s ease;
+.tab-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-primary);
 }
 
-.tab-btn:hover svg {
-  opacity: 0.8;
+.tab-btn.active {
+  color: #000000 !important;
+  /* Explicit black text as requested */
+  font-weight: 800 !important;
+  background: rgba(79, 110, 247, 0.08);
 }
 
 .tab-btn.active svg {
+  color: var(--secondary);
   opacity: 1;
+}
+
+/* Appointments Tab Header & Sub-navigation */
+.appointments-header-panel {
+  padding: 2.5rem 2.5rem 0.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.appointments-subtabs {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-bottom: 1rem;
+}
+
+.appointment-subtab-btn {
+  padding: 0.5rem 1.25rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 30px !important;
+  font-weight: 700 !important;
 }
 
 /* Tab Panes */
 .tab-pane {
   display: none;
   animation: tabFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 .tab-pane.active {
@@ -2876,7 +3050,8 @@ body.layout-fixed {
 .mini-day-name {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #9ca3af; /* Light grey */
+  color: #9ca3af;
+  /* Light grey */
   text-transform: uppercase;
   height: 40px;
   display: flex;
@@ -2904,7 +3079,8 @@ body.layout-fixed {
 }
 
 .mini-day.selected {
-  background: #4f6ef7 !important; /* Blue circle from image */
+  background: #4f6ef7 !important;
+  /* Blue circle from image */
   color: #ffffff !important;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(79, 110, 247, 0.3);
@@ -2926,7 +3102,8 @@ body.layout-fixed {
 }
 
 .mini-calendar-footer {
-  display: none; /* Removed as per the minimal design in the second image */
+  display: none;
+  /* Removed as per the minimal design in the second image */
 }
 
 /* === MINI INSTRUCTOR CARDS === */
@@ -2979,4 +3156,3 @@ body.layout-fixed {
   color: #64748b;
   margin: 2px 0 0 0;
 }
-

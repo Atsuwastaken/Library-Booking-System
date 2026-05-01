@@ -24,6 +24,17 @@ class BookingService {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getPrograms($departmentId = null)
+    {
+        if ($departmentId) {
+            $stmt = $this->db->prepare("SELECT * FROM programs WHERE department_id = ? ORDER BY name ASC");
+            $stmt->execute([$departmentId]);
+        } else {
+            $stmt = $this->db->query("SELECT * FROM programs ORDER BY name ASC");
+        }
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getTopicDepartments($topicId)
     {
         $stmt = $this->db->prepare("SELECT DISTINCT d.id, d.name FROM department d 
@@ -461,7 +472,7 @@ class BookingService {
             $offDay = $this->getOffDayByDate(date('Y-m-d', $startTimestamp));
             $creator = $this->getUserInfo($userId);
             $creatorRole = strtolower((string) ($creator['role'] ?? ''));
-            if ($offDay && $creatorRole === 'student') {
+            if ($offDay && $creatorRole === 'general') {
                 $offDayReason = trim((string) ($offDay['description'] ?? ''));
                 throw new Exception($offDayReason !== '' ? $offDayReason : 'This day is unavailable for booking.');
             }
@@ -849,9 +860,11 @@ class BookingService {
     }
     public function getUserInfo($userId)
     {
-        $stmt = $this->db->prepare("SELECT u.id, u.name, u.email, u.student_number, u.role, u.department_id, u.facilitator_id, d.name as department_name 
+        $stmt = $this->db->prepare("SELECT u.id, u.name, u.email, u.student_number, u.role, u.department_id, u.facilitator_id, d.name as department_name,
+                                          u.user_type, u.year_level, u.course_program, u.course, u.enrollment_status, u.enrollment_type, p.name as program_name
                                    FROM users u 
                                    LEFT JOIN department d ON u.department_id = d.id 
+                                   LEFT JOIN programs p ON u.course_program = p.id
                                    WHERE u.id = ?");
         $stmt->execute([$userId]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -881,13 +894,13 @@ class BookingService {
     private function normalizeRole($role)
     {
         $normalized = strtolower(trim((string) $role));
-        if (!in_array($normalized, ['student', 'staff', 'admin'], true)) {
-            return 'student';
+        if (!in_array($normalized, ['general', 'staff', 'admin'], true)) {
+            return 'general';
         }
         return $normalized;
     }
 
-    public function submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, $requestedRole = 'student', $requestedFacilitatorId = null)
+    public function submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, $requestedRole = 'general', $requestedFacilitatorId = null, $userType = 'non-student', $yearLevel = null, $courseProgram = null, $course = null, $enrollmentStatus = null, $enrollmentType = null)
     {
         $normalizedEmail = strtolower(trim((string) $email));
         if ($normalizedEmail === '') {
@@ -904,26 +917,33 @@ class BookingService {
         $facilitatorId = !empty($requestedFacilitatorId) ? (int) $requestedFacilitatorId : null;
         $deptId = !empty($departmentId) ? (int) $departmentId : null;
 
-        $stmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id)
-                                          VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $this->db->prepare("INSERT INTO registration_requests (student_number, name, email, password, department_id, requested_role, requested_facilitator_id, user_type, year_level, course_program, course, enrollment_status, enrollment_type)
+                                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         return $stmt->execute([
             trim((string) $studentNumber),
             trim((string) $name),
             $normalizedEmail,
-            $roleToStore,
             (string) $password,
             $deptId,
-            $facilitatorId
+            $roleToStore,
+            $facilitatorId,
+            $userType,
+            $yearLevel,
+            $courseProgram,
+            $course,
+            $enrollmentStatus,
+            $enrollmentType
         ]);
     }
 
     public function getRegistrationRequests($status = null)
     {
-        $sql = "SELECT rr.*, d.name AS department_name, f.name AS facilitator_name, reviewer.name AS reviewed_by_name
+        $sql = "SELECT rr.*, d.name AS department_name, f.name AS facilitator_name, reviewer.name AS reviewed_by_name, p.name AS course_program_name
                 FROM registration_requests rr
                 LEFT JOIN department d ON rr.department_id = d.id
                 LEFT JOIN facilitators f ON rr.requested_facilitator_id = f.id
-                LEFT JOIN users reviewer ON rr.reviewed_by = reviewer.id";
+                LEFT JOIN users reviewer ON rr.reviewed_by = reviewer.id
+                LEFT JOIN programs p ON rr.course_program = p.id";
 
         $params = [];
         if ($status !== null && $status !== '') {
@@ -992,7 +1012,7 @@ class BookingService {
         $stmt->execute([$facilitatorId]);
     }
 
-    public function approveRegistrationRequest($requestId, $approvedByUserId, $role = 'student', $departmentId = null, $facilitatorEnabled = false)
+    public function approveRegistrationRequest($requestId, $approvedByUserId, $role = 'general', $departmentId = null, $facilitatorEnabled = false, $userType = 'non-student', $yearLevel = null, $courseProgram = null, $course = null, $enrollmentStatus = null, $enrollmentType = null)
     {
         $this->db->beginTransaction();
         try {
@@ -1010,11 +1030,11 @@ class BookingService {
                 throw new Exception('A user with this email already exists.');
             }
 
-            $roleToSave = $this->normalizeRole($role ?: ($request['requested_role'] ?? 'student'));
+            $roleToSave = $this->normalizeRole($role ?: ($request['requested_role'] ?? 'general'));
             $deptToSave = !empty($departmentId) ? (int) $departmentId : (!empty($request['department_id']) ? (int) $request['department_id'] : null);
 
-            $createStmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id)
-                                              VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $createStmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id, user_type, year_level, course_program, course, enrollment_status, enrollment_type)
+                                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $createStmt->execute([
                 trim((string) ($request['student_number'] ?? '')),
                 trim((string) ($request['name'] ?? '')),
@@ -1022,7 +1042,13 @@ class BookingService {
                 $roleToSave,
                 (string) ($request['password'] ?? ''),
                 $deptToSave,
-                null
+                null,
+                $userType ?: ($request['user_type'] ?? 'non-student'),
+                $yearLevel ?: ($request['year_level'] ?? null),
+                $courseProgram ?: ($request['course_program'] ?? null),
+                $course ?: ($request['course'] ?? null),
+                $enrollmentStatus ?: ($request['enrollment_status'] ?? null),
+                $enrollmentType ?: ($request['enrollment_type'] ?? null)
             ]);
 
             $newUserId = (int) $this->db->lastInsertId();
@@ -1071,16 +1097,83 @@ class BookingService {
     public function getUsersForAdmin()
     {
         $stmt = $this->db->query("SELECT u.id, u.student_number, u.name, u.email, u.role, u.department_id, u.facilitator_id,
+                                 u.user_type, u.year_level, u.course_program, u.course, u.enrollment_status, u.enrollment_type, p.name AS program_name, p.id AS program_id,
                                  CASE WHEN u.facilitator_id IS NOT NULL THEN 1 ELSE 0 END AS is_facilitator,
                                  d.name AS department_name, f.name AS facilitator_name
                                  FROM users u
                                  LEFT JOIN department d ON u.department_id = d.id
                                  LEFT JOIN facilitators f ON u.facilitator_id = f.id
+                                 LEFT JOIN programs p ON u.course_program = p.id
                                  ORDER BY u.name ASC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function addUserByAdmin($name, $email, $password, $role = 'staff', $studentNumber = '', $departmentId = null, $facilitatorEnabled = false)
+    public function updateUserProfile($userId, $data)
+    {
+        $userId = (int) $userId;
+        $name = trim((string) ($data['name'] ?? ''));
+        $email = strtolower(trim((string) ($data['email'] ?? '')));
+        $deptId = !empty($data['department_id']) ? (int) $data['department_id'] : null;
+        $studentNumber = trim((string) ($data['student_number'] ?? ''));
+        $yearLevel = $data['year_level'] ?? null;
+        $courseProgram = $data['course_program'] ?? null;
+        $course = $data['course'] ?? null;
+        $enrollmentStatus = $data['enrollment_status'] ?? null;
+        $enrollmentType = $data['enrollment_type'] ?? null;
+        $currentPassword = $data['current_password'] ?? '';
+        $newPassword = $data['new_password'] ?? '';
+
+        if ($name === '' || $email === '') {
+            throw new Exception('Name and email are required.');
+        }
+
+        $emailCheck = $this->db->prepare("SELECT id FROM users WHERE LOWER(email) = ? AND id != ? LIMIT 1");
+        $emailCheck->execute([$email, $userId]);
+        if ($emailCheck->fetchColumn()) {
+            throw new Exception('This email is already in use by another account.');
+        }
+
+        if ($newPassword !== '') {
+            $userStmt = $this->db->prepare("SELECT password FROM users WHERE id = ? LIMIT 1");
+            $userStmt->execute([$userId]);
+            $currentSavedPassword = $userStmt->fetchColumn();
+            if ($currentSavedPassword !== $currentPassword) {
+                throw new Exception('The current password you entered is incorrect.');
+            }
+        }
+
+        $this->db->beginTransaction();
+        try {
+            $sql = "UPDATE users SET name = ?, email = ?, department_id = ?, student_number = ?, year_level = ?, course_program = ?, course = ?, enrollment_status = ?, enrollment_type = ?";
+            $params = [$name, $email, $deptId, $studentNumber, $yearLevel, $courseProgram, $course, $enrollmentStatus, $enrollmentType];
+
+            if ($newPassword !== '') {
+                $sql .= ", password = ?";
+                $params[] = $newPassword;
+            }
+
+            $sql .= " WHERE id = ?";
+            $params[] = $userId;
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+
+            $userStmt = $this->db->prepare("SELECT facilitator_id FROM users WHERE id = ? LIMIT 1");
+            $userStmt->execute([$userId]);
+            $facilitatorId = $userStmt->fetchColumn();
+            if ($facilitatorId) {
+                $this->syncFacilitatorFromUser($userId, $name, $deptId, $facilitatorId);
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function addUserByAdmin($name, $email, $password, $role = 'staff', $studentNumber = '', $departmentId = null, $facilitatorEnabled = false, $userType = 'non-student', $yearLevel = null, $courseProgram = null, $course = null, $enrollmentStatus = null, $enrollmentType = null)
     {
         $normalizedName = trim((string) $name);
         $normalizedEmail = strtolower(trim((string) $email));
@@ -1102,7 +1195,7 @@ class BookingService {
         $finalStudentNumber = trim((string) $studentNumber);
         $finalDepartmentId = !empty($departmentId) ? (int) $departmentId : null;
 
-        if ($normalizedRole !== 'student') {
+        if ($normalizedRole !== 'general') {
             $finalStudentNumber = '';
             $finalDepartmentId = null;
         }
@@ -1113,15 +1206,21 @@ class BookingService {
 
         $this->db->beginTransaction();
         try {
-            $insertStmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id)
-                                             VALUES (?, ?, ?, ?, ?, ?, NULL)");
+            $insertStmt = $this->db->prepare("INSERT INTO users (student_number, name, email, role, password, department_id, facilitator_id, user_type, year_level, course_program, course, enrollment_status, enrollment_type)
+                                             VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)");
             $insertStmt->execute([
                 $finalStudentNumber,
                 $normalizedName,
                 $normalizedEmail,
                 $normalizedRole,
                 $rawPassword,
-                $finalDepartmentId
+                $finalDepartmentId,
+                $userType,
+                $yearLevel,
+                $courseProgram,
+                $course,
+                $enrollmentStatus,
+                $enrollmentType
             ]);
 
             $userId = (int) $this->db->lastInsertId();
@@ -1142,7 +1241,7 @@ class BookingService {
         }
     }
 
-    public function updateUserByAdmin($id, $name, $email, $studentNumber, $role, $departmentId = null, $facilitatorEnabled = false)
+    public function updateUserByAdmin($id, $name, $email, $studentNumber, $role, $departmentId = null, $facilitatorEnabled = false, $userType = 'non-student', $yearLevel = null, $courseProgram = null, $course = null, $enrollmentStatus = null, $enrollmentType = null)
     {
         $normalizedRole = $this->normalizeRole($role);
         $deptId = !empty($departmentId) ? (int) $departmentId : null;
@@ -1153,7 +1252,7 @@ class BookingService {
         $currentFacilitatorId = $currentStmt->fetchColumn();
 
         $stmt = $this->db->prepare("UPDATE users
-                                   SET name = ?, email = ?, student_number = ?, role = ?, department_id = ?
+                                   SET name = ?, email = ?, student_number = ?, role = ?, department_id = ?, user_type = ?, year_level = ?, course_program = ?, course = ?, enrollment_status = ?, enrollment_type = ?
                                    WHERE id = ?");
         $stmt->execute([
             trim((string) $name),
@@ -1161,6 +1260,12 @@ class BookingService {
             trim((string) $studentNumber),
             $normalizedRole,
             $deptId,
+            $userType,
+            $yearLevel,
+            $courseProgram,
+            $course,
+            $enrollmentStatus,
+            $enrollmentType,
             (int) $id
         ]);
 

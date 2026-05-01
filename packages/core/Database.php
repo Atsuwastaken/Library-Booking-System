@@ -44,8 +44,22 @@ class Database
                 password TEXT,
                 department_id INTEGER,
                 facilitator_id INTEGER,
+                user_type TEXT DEFAULT 'non-student',
+                year_level TEXT,
+                course_program INTEGER,
+                course TEXT,
+                enrollment_status TEXT,
+                enrollment_type TEXT,
                 FOREIGN KEY(department_id) REFERENCES department(id),
-                FOREIGN KEY(facilitator_id) REFERENCES facilitators(id)
+                FOREIGN KEY(facilitator_id) REFERENCES facilitators(id),
+                FOREIGN KEY(course_program) REFERENCES programs(id)
+            );
+
+            CREATE TABLE IF NOT EXISTS programs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                department_id INTEGER,
+                FOREIGN KEY(department_id) REFERENCES department(id)
             );
             
             CREATE TABLE IF NOT EXISTS topics (
@@ -146,7 +160,13 @@ class Database
                     email TEXT,
                     password TEXT,
                     department_id INTEGER,
-                    requested_role TEXT DEFAULT 'student',
+                    user_type TEXT DEFAULT 'non-student',
+                    year_level TEXT,
+                    course_program INTEGER,
+                    course TEXT,
+                    enrollment_status TEXT,
+                    enrollment_type TEXT,
+                    requested_role TEXT DEFAULT 'general',
                     requested_facilitator_id INTEGER,
                     status TEXT DEFAULT 'PENDING',
                     review_note TEXT,
@@ -155,14 +175,22 @@ class Database
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY(department_id) REFERENCES department(id),
                     FOREIGN KEY(requested_facilitator_id) REFERENCES facilitators(id),
-                    FOREIGN KEY(reviewed_by) REFERENCES users(id)
+                    FOREIGN KEY(reviewed_by) REFERENCES users(id),
+                    FOREIGN KEY(course_program) REFERENCES programs(id)
                 );
 
             -- Sample Data
             INSERT OR IGNORE INTO department (id, name) VALUES (1, 'Preschool'), (2, 'Grade School'), (3, 'Junior High School'), (4, 'Senior High School'), (5, 'CAMP');
 
             INSERT OR IGNORE INTO users (id, student_number, name, email, role, password, department_id) 
-            VALUES (1, '24-1021-948', 'Jullian Doe', 'student@example.com', 'Student', 'password', 3);
+            VALUES (1, '24-1021-948', 'Jullian Doe', 'student@example.com', 'general', 'password', 3);
+
+            INSERT OR IGNORE INTO programs (id, name, department_id) VALUES 
+            (1, 'BSCS1', 5), (2, 'BSCS2', 5), (3, 'BSCAMP1', 5), (4, 'BSIT1', 5),
+            (5, 'BSIT2', 5), (6, 'BSEd1', 5), (7, 'BSEd2', 5), (8, 'BSN1', 5),
+            (9, 'BSN2', 5), (10, 'Preschool-A', 1), (11, 'Preschool-B', 1),
+            (12, 'Grade School-A', 2), (13, 'Grade School-B', 2),
+            (14, 'JHS-STEM', 3), (15, 'JHS-ABM', 3), (16, 'SHS-STEM', 4), (17, 'SHS-ABM', 4);
 
             INSERT OR IGNORE INTO users (id, student_number, name, email, role, password, department_id, facilitator_id) 
             VALUES (2, 'STAFF-001', 'Lib Staff Maria', 'maria@datalib.local', 'staff', 'password', 2, NULL);
@@ -207,6 +235,39 @@ class Database
         $this->ensureColumn('sessions', 'cancelled_date_time', 'TEXT');
         $this->ensureColumn('sessions', 'cancelled_by', 'TEXT');
         $this->ensureColumn('sessions', 'evaluation_notes', 'TEXT');
+
+        $this->ensureColumn('users', 'user_type', "TEXT DEFAULT 'non-student'");
+        $this->ensureColumn('users', 'year_level', 'TEXT');
+        $this->ensureColumn('users', 'course_program', 'INTEGER');
+        $this->ensureColumn('users', 'course', 'TEXT');
+        $this->ensureColumn('users', 'enrollment_status', 'TEXT');
+        $this->ensureColumn('users', 'enrollment_type', 'TEXT');
+
+        $this->ensureColumn('registration_requests', 'user_type', "TEXT DEFAULT 'non-student'");
+        $this->ensureColumn('registration_requests', 'year_level', 'TEXT');
+        $this->ensureColumn('registration_requests', 'course_program', 'INTEGER');
+        $this->ensureColumn('registration_requests', 'course', 'TEXT');
+        $this->ensureColumn('registration_requests', 'enrollment_status', 'TEXT');
+        $this->ensureColumn('registration_requests', 'enrollment_type', 'TEXT');
+
+        $this->pdo->exec("UPDATE users SET role = 'general' WHERE LOWER(role) = 'student'");
+
+        $this->pdo->exec("CREATE TABLE IF NOT EXISTS programs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            department_id INTEGER,
+            FOREIGN KEY(department_id) REFERENCES department(id)
+        )");
+
+        $count = $this->pdo->query("SELECT COUNT(*) FROM programs")->fetchColumn();
+        if ($count == 0) {
+            $this->pdo->exec("INSERT INTO programs (id, name, department_id) VALUES 
+                (1, 'BSCS1', 5), (2, 'BSCS2', 5), (3, 'BSCAMP1', 5), (4, 'BSIT1', 5),
+                (5, 'BSIT2', 5), (6, 'BSEd1', 5), (7, 'BSEd2', 5), (8, 'BSN1', 5),
+                (9, 'BSN2', 5), (10, 'Preschool-A', 1), (11, 'Preschool-B', 1),
+                (12, 'Grade School-A', 2), (13, 'Grade School-B', 2),
+                (14, 'JHS-STEM', 3), (15, 'JHS-ABM', 3), (16, 'SHS-STEM', 4), (17, 'SHS-ABM', 4)");
+        }
 
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS department_facilitators (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -282,7 +343,7 @@ class Database
             email TEXT,
             password TEXT,
             department_id INTEGER,
-            requested_role TEXT DEFAULT 'student',
+            requested_role TEXT DEFAULT 'general',
             requested_facilitator_id INTEGER,
             status TEXT DEFAULT 'PENDING',
             review_note TEXT,
@@ -310,7 +371,7 @@ class Database
         $this->ensureColumn('registration_requests', 'email', 'TEXT');
         $this->ensureColumn('registration_requests', 'password', 'TEXT');
         $this->ensureColumn('registration_requests', 'department_id', 'INTEGER');
-        $this->ensureColumn('registration_requests', 'requested_role', "TEXT DEFAULT 'student'");
+        $this->ensureColumn('registration_requests', 'requested_role', "TEXT DEFAULT 'general'");
         $this->ensureColumn('registration_requests', 'requested_facilitator_id', 'INTEGER');
         $this->ensureColumn('registration_requests', 'status', "TEXT DEFAULT 'PENDING'");
         $this->ensureColumn('registration_requests', 'review_note', 'TEXT');

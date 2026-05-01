@@ -95,6 +95,12 @@ if ($action === 'submit_registration') {
     $email = trim((string) ($data['email'] ?? ''));
     $password = (string) ($data['password'] ?? '');
     $departmentId = (int) ($data['department_id'] ?? 0);
+    $userType = $data['user_type'] ?? 'non-student';
+    $yearLevel = $data['year_level'] ?? null;
+    $courseProgram = $data['course_program'] ?? null;
+    $course = $data['course'] ?? null;
+    $enrollmentStatus = $data['enrollment_status'] ?? null;
+    $enrollmentType = $data['enrollment_type'] ?? null;
 
     if ($name === '' || $email === '' || $password === '' || $departmentId <= 0) {
         echo json_encode(['success' => false, 'message' => 'Name, email, password, and department are required.']);
@@ -102,13 +108,26 @@ if ($action === 'submit_registration') {
     }
 
     try {
-        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'student', null);
+        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'general', null, $userType, $yearLevel, $courseProgram, $course, $enrollmentStatus, $enrollmentType);
         echo json_encode([
             'success' => $success,
             'message' => $success
                 ? 'Registration successful. You may now log in.'
                 : 'Unable to register.'
         ]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+if ($action === 'update_profile') {
+    $userId = requireAuthenticatedUserId();
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    try {
+        $success = $service->updateUserProfile($userId, $data);
+        echo json_encode(['success' => $success, 'message' => 'Profile updated successfully.']);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
@@ -131,9 +150,15 @@ if ($action === 'approve_registration_request') {
 
     $data = json_decode(file_get_contents('php://input'), true);
     $requestId = (int) ($data['request_id'] ?? 0);
-    $role = trim((string) ($data['role'] ?? 'student'));
+    $role = trim((string) ($data['role'] ?? 'general'));
     $departmentId = (int) ($data['department_id'] ?? 0);
     $facilitatorEnabled = !empty($data['facilitator_enabled']);
+    $userType = $data['user_type'] ?? 'non-student';
+    $yearLevel = $data['year_level'] ?? null;
+    $courseProgram = $data['course_program'] ?? null;
+    $course = $data['course'] ?? null;
+    $enrollmentStatus = $data['enrollment_status'] ?? null;
+    $enrollmentType = $data['enrollment_type'] ?? null;
 
     if ($requestId <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid request id.']);
@@ -146,7 +171,13 @@ if ($action === 'approve_registration_request') {
             $adminUserId,
             $role,
             $departmentId > 0 ? $departmentId : null,
-            $facilitatorEnabled
+            $facilitatorEnabled,
+            $userType,
+            $yearLevel,
+            $courseProgram,
+            $course,
+            $enrollmentStatus,
+            $enrollmentType
         );
         echo json_encode(['success' => $success]);
     } catch (Exception $e) {
@@ -191,9 +222,15 @@ if ($action === 'update_user_admin') {
     $name = trim((string) ($data['name'] ?? ''));
     $email = trim((string) ($data['email'] ?? ''));
     $studentNumber = trim((string) ($data['student_number'] ?? ''));
-    $role = trim((string) ($data['role'] ?? 'student'));
+    $role = trim((string) ($data['role'] ?? 'general'));
     $departmentId = (int) ($data['department_id'] ?? 0);
     $facilitatorEnabled = !empty($data['facilitator_enabled']);
+    $userType = $data['user_type'] ?? 'non-student';
+    $yearLevel = $data['year_level'] ?? null;
+    $courseProgram = $data['course_program'] ?? null;
+    $course = $data['course'] ?? null;
+    $enrollmentStatus = $data['enrollment_status'] ?? null;
+    $enrollmentType = $data['enrollment_type'] ?? null;
 
     if ($id <= 0 || $name === '' || $email === '') {
         echo json_encode(['success' => false, 'message' => 'User id, name, and email are required.']);
@@ -207,7 +244,13 @@ if ($action === 'update_user_admin') {
         $studentNumber,
         $role,
         $departmentId > 0 ? $departmentId : null,
-        $facilitatorEnabled
+        $facilitatorEnabled,
+        $userType,
+        $yearLevel,
+        $courseProgram,
+        $course,
+        $enrollmentStatus,
+        $enrollmentType
     );
     echo json_encode(['success' => $success]);
     exit;
@@ -225,6 +268,12 @@ if ($action === 'add_user_admin') {
     $role = trim((string) ($data['role'] ?? 'staff'));
     $departmentId = (int) ($data['department_id'] ?? 0);
     $facilitatorEnabled = !empty($data['facilitator_enabled']);
+    $userType = $data['user_type'] ?? 'non-student';
+    $yearLevel = $data['year_level'] ?? null;
+    $courseProgram = $data['course_program'] ?? null;
+    $course = $data['course'] ?? null;
+    $enrollmentStatus = $data['enrollment_status'] ?? null;
+    $enrollmentType = $data['enrollment_type'] ?? null;
 
     if ($name === '' || $email === '' || $password === '') {
         echo json_encode(['success' => false, 'message' => 'Name, email, and password are required.']);
@@ -239,7 +288,13 @@ if ($action === 'add_user_admin') {
             $role,
             $studentNumber,
             $departmentId > 0 ? $departmentId : null,
-            $facilitatorEnabled
+            $facilitatorEnabled,
+            $userType,
+            $yearLevel,
+            $courseProgram,
+            $course,
+            $enrollmentStatus,
+            $enrollmentType
         );
 
         echo json_encode(['success' => true, 'user_id' => $userId]);
@@ -386,6 +441,13 @@ if ($action === 'get_facilitators') {
 if ($action === 'get_departments') {
     $departments = $service->getDepartments();
     echo json_encode(['success' => true, 'departments' => $departments]);
+    exit;
+}
+
+if ($action === 'get_programs') {
+    $deptId = $_GET['department_id'] ?? null;
+    $programs = $service->getPrograms($deptId);
+    echo json_encode(['success' => true, 'programs' => $programs]);
     exit;
 }
 

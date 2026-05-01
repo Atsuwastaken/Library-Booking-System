@@ -1,5 +1,5 @@
 <?php
-$isStudent = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'student';
+$isStudent = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'general';
 $readonlyAttr = $isStudent ? 'readonly style="background-color: #e2e8f0; cursor: not-allowed;"' : '';
 ?>
 <!-- Refined Booking Component -->
@@ -16,7 +16,7 @@ $readonlyAttr = $isStudent ? 'readonly style="background-color: #e2e8f0; cursor:
         
         <form id="advanced-booking-form" class="booking-flow">
             <?php 
-            $userRole = $_SESSION['user_role'] ?? 'Student';
+            $userRole = $_SESSION['user_role'] ?? 'General';
             $isStaffOrAdmin = in_array(strtolower($userRole), ['staff', 'admin']);
             ?>
 

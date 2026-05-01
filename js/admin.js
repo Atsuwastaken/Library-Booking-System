@@ -142,10 +142,10 @@ function normalizeText(value) {
 
 function normalizeRole(roleValue) {
     const value = normalizeText(roleValue);
-    if (value === 'admin' || value === 'staff' || value === 'student') {
+    if (value === 'admin' || value === 'staff' || value === 'general') {
         return value;
     }
-    return 'student';
+    return 'general';
 }
 
 function isTruthy(value) {
@@ -168,7 +168,7 @@ function getRoleBadge(roleValue) {
     const palette = {
         admin: '#b91c1c',
         staff: '#1d4ed8',
-        student: '#047857'
+        general: '#047857'
     };
     const color = palette[role] || '#334155';
     return `<span class="users-admin-chip" style="border-color:${color}33; color:${color}; background:${color}14;">${escapeHtml(role)}</span>`;
@@ -192,81 +192,66 @@ function initUsersDirectoryUI() {
         });
     }
 
-    const modalOpeners = [
-        ['open-add-staff-modal', 'add-staff-modal'],
-        ['open-add-facilitator-user-modal', 'add-facilitator-user-modal'],
-        ['open-add-admin-modal', 'add-admin-modal']
-    ];
+    const addGeneralForm = document.getElementById('add-general-form');
+    if (addGeneralForm) {
+        addGeneralForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            handleCreateAdminUser(event.currentTarget, {
+                role: 'general',
+                facilitatorEnabled: false,
+                modalId: 'add-general-modal',
+                successMessage: 'General account added successfully.'
+            });
+        });
 
-    modalOpeners.forEach(([openBtnId, modalId]) => {
-        const openBtn = document.getElementById(openBtnId);
-        const modal = document.getElementById(modalId);
-        if (openBtn && modal) {
-            openBtn.addEventListener('click', () => modal.classList.add('active'));
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    modal.classList.remove('active');
-                }
+        const userTypeSelect = document.getElementById('add-general-user-type');
+        const deptSelect = document.getElementById('add-general-dept');
+        const studentFields = document.getElementById('add-general-student-fields');
+        const programSelect = document.getElementById('add-general-program');
+
+        if (userTypeSelect && studentFields) {
+            userTypeSelect.addEventListener('change', () => {
+                studentFields.style.display = userTypeSelect.value === 'student' ? 'grid' : 'none';
             });
         }
-    });
 
-    document.querySelectorAll('[data-close-modal]').forEach(button => {
-        button.addEventListener('click', () => {
-            const modalId = button.getAttribute('data-close-modal');
-            if (!modalId) return;
-            const modal = document.getElementById(modalId);
-            if (modal) modal.classList.remove('active');
-        });
-    });
-
-    const addStaffForm = document.getElementById('add-staff-form');
-    if (addStaffForm) {
-        addStaffForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            handleCreateAdminUser(event.currentTarget, {
-                role: 'staff',
-                facilitatorEnabled: false,
-                modalId: 'add-staff-modal',
-                successMessage: 'Staff account added successfully.'
+        if (deptSelect && programSelect) {
+            deptSelect.addEventListener('change', async () => {
+                const deptId = deptSelect.value;
+                programSelect.innerHTML = '<option value="">Select Program</option>';
+                if (!deptId) return;
+                try {
+                    const res = await fetch(`api.php?action=get_programs&department_id=${deptId}`);
+                    const data = await res.json();
+                    if (data.success) {
+                        data.programs.forEach(p => {
+                            const opt = document.createElement('option');
+                            opt.value = p.id;
+                            opt.textContent = p.name;
+                            programSelect.appendChild(opt);
+                        });
+                    }
+                } catch (e) { console.error(e); }
             });
-        });
-    }
-
-    const addFacilitatorForm = document.getElementById('add-facilitator-user-form');
-    if (addFacilitatorForm) {
-        addFacilitatorForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            handleCreateAdminUser(event.currentTarget, {
-                role: 'staff',
-                facilitatorEnabled: true,
-                modalId: 'add-facilitator-user-modal',
-                successMessage: 'Facilitator account added successfully.'
-            });
-        });
-    }
-
-    const addAdminForm = document.getElementById('add-admin-form');
-    if (addAdminForm) {
-        addAdminForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            handleCreateAdminUser(event.currentTarget, {
-                role: 'admin',
-                facilitatorEnabled: false,
-                modalId: 'add-admin-modal',
-                successMessage: 'Admin account added successfully.'
-            });
-        });
+        }
     }
 }
 
 async function handleCreateAdminUser(formEl, config) {
     if (!formEl) return;
 
-    const submitBtn = formEl.querySelector('button[type="submit"]');
+    const studentNumber = formEl.querySelector('[name="student_number"]')?.value?.trim() || '';
+    const departmentId = formEl.querySelector('[name="department_id"]')?.value || '';
+    const userType = formEl.querySelector('[name="user_type"]')?.value || 'non-student';
+    const yearLevel = formEl.querySelector('[name="year_level"]')?.value || null;
+    const courseProgram = formEl.querySelector('[name="course_program"]')?.value || null;
+    const course = formEl.querySelector('[name="course"]')?.value || '';
+    const enrollmentStatus = formEl.querySelector('[name="enrollment_status"]')?.value || 'Regular';
+    const enrollmentType = formEl.querySelector('[name="enrollment_type"]')?.value || '';
     const name = formEl.querySelector('[name="name"]')?.value?.trim() || '';
     const email = formEl.querySelector('[name="email"]')?.value?.trim() || '';
     const password = formEl.querySelector('[name="password"]')?.value || '';
+    const submitBtn = formEl.querySelector('button[type="submit"]');
 
     if (!name || !email || !password) {
         notify('Name, email, and password are required.', 'error');
@@ -287,8 +272,15 @@ async function handleCreateAdminUser(formEl, config) {
                 email,
                 password,
                 role: config.role,
+                student_number: studentNumber,
                 department_id: departmentId,
-                facilitator_enabled: config.facilitatorEnabled
+                facilitator_enabled: config.facilitatorEnabled,
+                user_type: userType,
+                year_level: yearLevel,
+                course_program: courseProgram,
+                course: course,
+                enrollment_status: enrollmentStatus,
+                enrollment_type: enrollmentType
             })
         });
         const data = await res.json();
@@ -320,15 +312,15 @@ async function handleCreateAdminUser(formEl, config) {
 }
 
 async function loadUsersAdminData() {
-    const studentTbody = document.getElementById('users-admin-students-tbody');
+    const generalTbody = document.getElementById('users-admin-general-tbody');
     const staffTbody = document.getElementById('users-admin-staff-tbody');
     const facilitatorTbody = document.getElementById('users-admin-facilitators-tbody');
     const adminTbody = document.getElementById('users-admin-admins-tbody');
     const completedTbody = document.getElementById('users-completed-appointments-tbody');
     const requestsTbody = document.getElementById('registration-requests-tbody');
-    if (!studentTbody || !staffTbody || !facilitatorTbody || !adminTbody || !completedTbody || !requestsTbody) return;
+    if (!generalTbody || !staffTbody || !facilitatorTbody || !adminTbody || !completedTbody || !requestsTbody) return;
 
-    studentTbody.innerHTML = '<tr><td colspan="7" style="padding: 1rem; color: #94a3b8;">Loading students...</td></tr>';
+    generalTbody.innerHTML = '<tr><td colspan="11" style="padding: 1rem; color: #94a3b8;">Loading general users...</td></tr>';
     staffTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #94a3b8;">Loading staff...</td></tr>';
     facilitatorTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #94a3b8;">Loading facilitators...</td></tr>';
     adminTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #94a3b8;">Loading admins...</td></tr>';
@@ -362,7 +354,7 @@ async function loadUsersAdminData() {
         renderUsersAdminTable();
     } catch (error) {
         console.error('Failed to load admin users tab data:', error);
-        studentTbody.innerHTML = '<tr><td colspan="7" style="padding: 1rem; color: #ef4444;">Failed to load users.</td></tr>';
+        generalTbody.innerHTML = '<tr><td colspan="11" style="padding: 1rem; color: #ef4444;">Failed to load users.</td></tr>';
         staffTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #ef4444;">Failed to load users.</td></tr>';
         facilitatorTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #ef4444;">Failed to load users.</td></tr>';
         adminTbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #ef4444;">Failed to load users.</td></tr>';
@@ -390,7 +382,7 @@ function renderRegistrationRequestsTable() {
     }
 
     filteredRequests.forEach(req => {
-        const requestedRole = normalizeRole(req.requested_role || 'student');
+        const requestedRole = normalizeRole(req.requested_role || 'general');
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -411,7 +403,7 @@ function renderRegistrationRequestsTable() {
             <td>
                 <div style="display:flex; flex-direction:column; gap:0.45rem;">
                     <select class="form-control users-combobox" data-field="role">
-                        <option value="student" ${requestedRole === 'student' ? 'selected' : ''}>student</option>
+                        <option value="general" ${requestedRole === 'general' ? 'selected' : ''}>general</option>
                         <option value="staff" ${requestedRole === 'staff' ? 'selected' : ''}>staff</option>
                         <option value="admin" ${requestedRole === 'admin' ? 'selected' : ''}>admin</option>
                     </select>
@@ -419,6 +411,12 @@ function renderRegistrationRequestsTable() {
                         <input type="checkbox" data-field="facilitator_enabled" ${req.requested_facilitator_id ? 'checked' : ''}>
                         <span>Facilitator</span>
                     </label>
+                        Type: ${escapeHtml(req.user_type || 'N/A')}<br>
+                        Program: ${escapeHtml(req.course_program_name || req.course_program || 'N/A')}<br>
+                        Course: ${escapeHtml(req.course || 'N/A')}<br>
+                        Year: ${escapeHtml(req.year_level || 'N/A')}<br>
+                        Enrollment: ${escapeHtml(req.enrollment_status || 'N/A')} (${escapeHtml(req.enrollment_type || 'N/A')})
+                    </div>
                 </div>
             </td>
             <td>
@@ -432,7 +430,7 @@ function renderRegistrationRequestsTable() {
         const approveBtn = tr.querySelector('.btn.btn-primary');
         const rejectBtn = tr.querySelector('.btn.btn-outline');
 
-        approveBtn.addEventListener('click', () => approveRegistrationRequest(req.id, tr));
+        approveBtn.addEventListener('click', () => approveRegistrationRequest(req.id, tr, req));
         rejectBtn.addEventListener('click', () => rejectRegistrationRequest(req.id));
 
         tbody.appendChild(tr);
@@ -440,13 +438,13 @@ function renderRegistrationRequestsTable() {
 }
 
 function renderUsersAdminTable() {
-    const studentTbody = document.getElementById('users-admin-students-tbody');
+    const generalTbody = document.getElementById('users-admin-general-tbody');
     const staffTbody = document.getElementById('users-admin-staff-tbody');
     const facilitatorTbody = document.getElementById('users-admin-facilitators-tbody');
     const adminTbody = document.getElementById('users-admin-admins-tbody');
-    if (!studentTbody || !staffTbody || !facilitatorTbody || !adminTbody) return;
+    if (!generalTbody || !staffTbody || !facilitatorTbody || !adminTbody) return;
 
-    studentTbody.innerHTML = '';
+    generalTbody.innerHTML = '';
     staffTbody.innerHTML = '';
     facilitatorTbody.innerHTML = '';
     adminTbody.innerHTML = '';
@@ -461,25 +459,25 @@ function renderUsersAdminTable() {
         user.is_facilitator ? 'facilitator' : 'not facilitator'
     ]));
 
-    const students = filteredUsers.filter(user => normalizeRole(user.role) === 'student' && !isTruthy(user.is_facilitator));
+    const generals = filteredUsers.filter(user => normalizeRole(user.role) === 'general' && !isTruthy(user.is_facilitator));
     const staff = filteredUsers.filter(user => normalizeRole(user.role) === 'staff' && !isTruthy(user.is_facilitator));
     const facilitators = filteredUsers.filter(user => isTruthy(user.is_facilitator));
     const admins = filteredUsers.filter(user => normalizeRole(user.role) === 'admin' && !isTruthy(user.is_facilitator));
 
-    renderStudentRows(students, studentTbody, 'No student users found.');
+    renderGeneralRows(generals, generalTbody, 'No general users found.');
     renderCompactRoleRows(staff, staffTbody, 'No staff users found.');
     renderCompactRoleRows(facilitators, facilitatorTbody, 'No facilitator users found.');
     renderCompactRoleRows(admins, adminTbody, 'No admin users found.');
 }
 
-function renderStudentRows(users, tbody, emptyMessage) {
+function renderGeneralRows(users, tbody, emptyMessage) {
     if (!users.length) {
-        tbody.innerHTML = `<tr><td colspan="7" style="padding: 1rem; color: #94a3b8;">${emptyMessage}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="13" style="padding: 1rem; color: #94a3b8;">${emptyMessage}</td></tr>`;
         return;
     }
 
     users.forEach(user => {
-        const role = normalizeRole(user.role || 'student');
+        const role = normalizeRole(user.role || 'general');
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -495,8 +493,48 @@ function renderStudentRows(users, tbody, emptyMessage) {
                 </select>
             </td>
             <td>
+                <select class="form-control users-combobox" data-field="user_type">
+                    <option value="student" ${user.user_type === 'student' ? 'selected' : ''}>Student</option>
+                    <option value="non-student" ${user.user_type === 'non-student' ? 'selected' : ''}>Non-Student</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-control users-combobox" data-field="year_level">
+                    <option value="">N/A</option>
+                    <option value="1st Year" ${user.year_level === '1st Year' ? 'selected' : ''}>1st Year</option>
+                    <option value="2nd Year" ${user.year_level === '2nd Year' ? 'selected' : ''}>2nd Year</option>
+                    <option value="3rd Year" ${user.year_level === '3rd Year' ? 'selected' : ''}>3rd Year</option>
+                    <option value="4th Year" ${user.year_level === '4th Year' ? 'selected' : ''}>4th Year</option>
+                    <option value="5th Year" ${user.year_level === '5th Year' ? 'selected' : ''}>5th Year</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-control users-combobox" data-field="course_program">
+                    <option value="">N/A</option>
+                    <!-- Populated via JS if student -->
+                </select>
+            </td>
+            <td>
+                <input type="text" class="form-control" data-field="course" value="${escapeHtml(user.course || '')}" placeholder="Course/Major">
+            </td>
+            <td>
+                <select class="form-control users-combobox" data-field="enrollment_status">
+                    <option value="Regular" ${user.enrollment_status === 'Regular' ? 'selected' : ''}>Regular</option>
+                    <option value="Irregular" ${user.enrollment_status === 'Irregular' ? 'selected' : ''}>Irregular</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-control users-combobox" data-field="enrollment_type">
+                    <option value="">N/A</option>
+                    <option value="New" ${user.enrollment_type === 'New' ? 'selected' : ''}>New</option>
+                    <option value="Returning" ${user.enrollment_type === 'Returning' ? 'selected' : ''}>Returning</option>
+                    <option value="Transferee" ${user.enrollment_type === 'Transferee' ? 'selected' : ''}>Transferee</option>
+                    <option value="Cross-Enrollee" ${user.enrollment_type === 'Cross-Enrollee' ? 'selected' : ''}>Cross-Enrollee</option>
+                </select>
+            </td>
+            <td>
                 <select class="form-control users-combobox" data-field="role">
-                    <option value="student" ${role === 'student' ? 'selected' : ''}>student</option>
+                    <option value="general" ${role === 'general' ? 'selected' : ''}>general</option>
                     <option value="staff" ${role === 'staff' ? 'selected' : ''}>staff</option>
                     <option value="admin" ${role === 'admin' ? 'selected' : ''}>admin</option>
                 </select>
@@ -515,6 +553,40 @@ function renderStudentRows(users, tbody, emptyMessage) {
                 </div>
             </td>
         `;
+
+        const deptSelect = tr.querySelector('[data-field="department_id"]');
+        const programSelect = tr.querySelector('[data-field="course_program"]');
+        const userTypeSelect = tr.querySelector('[data-field="user_type"]');
+
+        const updatePrograms = async () => {
+            const isStudent = userTypeSelect.value === 'student';
+            if (!isStudent) {
+                programSelect.innerHTML = '<option value="">N/A</option>';
+                programSelect.disabled = true;
+                return;
+            }
+            programSelect.disabled = false;
+            const deptId = deptSelect.value;
+            programSelect.innerHTML = '<option value="">Select Program</option>';
+            if (!deptId) return;
+            try {
+                const res = await fetch(`api.php?action=get_programs&department_id=${deptId}`);
+                const data = await res.json();
+                if (data.success) {
+                    data.programs.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.name;
+                        if (String(p.id) === String(user.course_program)) opt.selected = true;
+                        programSelect.appendChild(opt);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        deptSelect.addEventListener('change', updatePrograms);
+        userTypeSelect.addEventListener('change', updatePrograms);
+        updatePrograms();
 
         const saveBtn = tr.querySelector('button.btn-primary');
         const deleteBtn = tr.querySelector('.users-delete-btn');
@@ -543,7 +615,7 @@ function renderCompactRoleRows(users, tbody, emptyMessage) {
             <td><input type="email" class="form-control" data-field="email" value="${escapeHtml(user.email || '')}"></td>
             <td>
                 <select class="form-control users-combobox" data-field="role">
-                    <option value="student" ${role === 'student' ? 'selected' : ''}>student</option>
+                    <option value="general" ${role === 'general' ? 'selected' : ''}>general</option>
                     <option value="staff" ${role === 'staff' ? 'selected' : ''}>staff</option>
                     <option value="admin" ${role === 'admin' ? 'selected' : ''}>admin</option>
                 </select>
@@ -572,12 +644,12 @@ function renderCompactRoleRows(users, tbody, emptyMessage) {
     });
 }
 
-async function approveRegistrationRequest(requestId, rowEl) {
-    const role = normalizeRole(rowEl.querySelector('[data-field="role"]')?.value || 'student');
+async function approveRegistrationRequest(requestId, rowEl, originalReq) {
+    const role = normalizeRole(rowEl.querySelector('[data-field="role"]')?.value || 'general');
     const facilitatorEnabled = rowEl.querySelector('[data-field="facilitator_enabled"]')?.checked || false;
     const lockedDepartmentId = rowEl.querySelector('[data-field="department_id"]')?.value || '';
     let departmentId = parseInt(lockedDepartmentId, 10) || null;
-    if (role !== 'student' || facilitatorEnabled) {
+    if (role !== 'general' || facilitatorEnabled) {
         departmentId = null;
     }
 
@@ -589,7 +661,13 @@ async function approveRegistrationRequest(requestId, rowEl) {
                 request_id: requestId,
                 role,
                 department_id: departmentId || null,
-                facilitator_enabled: facilitatorEnabled
+                facilitator_enabled: facilitatorEnabled,
+                user_type: originalReq.user_type,
+                year_level: originalReq.year_level,
+                course_program: originalReq.course_program,
+                course: originalReq.course,
+                enrollment_status: originalReq.enrollment_status,
+                enrollment_type: originalReq.enrollment_type
             })
         });
         const data = await res.json();
@@ -630,16 +708,17 @@ async function rejectRegistrationRequest(requestId) {
 }
 
 async function saveAdminUserRow(userId, rowEl) {
-    const role = normalizeRole(rowEl.querySelector('[data-field="role"]')?.value || 'student');
+    const role = normalizeRole(rowEl.querySelector('[data-field="role"]')?.value || 'general');
     const facilitatorEnabled = rowEl.querySelector('[data-field="facilitator_enabled"]')?.checked || false;
     const departmentField = rowEl.querySelector('[data-field="department_id"]');
-    const departmentId = (role === 'student' && !facilitatorEnabled && departmentField)
+    const departmentId = (role === 'general' && !facilitatorEnabled && departmentField)
         ? (parseInt(departmentField.value, 10) || null)
         : null;
-    const studentField = rowEl.querySelector('[data-field="student_number"]');
-    const studentNumber = role === 'student' && studentField
-        ? (studentField.value || '')
-        : '';
+    const studentNumber = rowEl.querySelector('[data-field="student_number"]')?.value || '';
+    const userType = rowEl.querySelector('[data-field="user_type"]')?.value || 'non-student';
+    const yearLevel = rowEl.querySelector('[data-field="year_level"]')?.value || null;
+    const courseProgram = rowEl.querySelector('[data-field="course_program"]')?.value || null;
+    const enrollmentStatus = rowEl.querySelector('[data-field="enrollment_status"]')?.value || null;
 
     const payload = {
         id: userId,
@@ -648,7 +727,13 @@ async function saveAdminUserRow(userId, rowEl) {
         student_number: studentNumber,
         department_id: departmentId,
         role,
-        facilitator_enabled: facilitatorEnabled
+        facilitator_enabled: facilitatorEnabled,
+        user_type: userType,
+        year_level: yearLevel,
+        course_program: courseProgram,
+        course: rowEl.querySelector('[data-field="course"]')?.value || '',
+        enrollment_status: enrollmentStatus,
+        enrollment_type: rowEl.querySelector('[data-field="enrollment_type"]')?.value || ''
     };
 
     try {

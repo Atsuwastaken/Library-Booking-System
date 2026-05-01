@@ -48,7 +48,7 @@ body.layout-fixed {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(135deg, #4361ee 0%, #3a56d4 40%, #5b7cfa 100%);
+  background: var(--panel-bg);
 }
 
 .app-bg-accent {
@@ -57,7 +57,7 @@ body.layout-fixed {
   right: -10%;
   width: 70%;
   height: 80%;
-  background: radial-gradient(ellipse, rgba(59, 92, 228, 0.5) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(161, 176, 237, 0.5) 0%, transparent 70%);
   z-index: 0;
   pointer-events: none;
 }
@@ -811,13 +811,12 @@ body.layout-fixed {
 
 .tab-btn:hover {
   background: rgba(0, 0, 0, 0.04);
-  color: var(--text-primary);
+  color: #c5c5c5;
 }
 
 .tab-btn.active {
-  color: #000000 !important;
+  color: #ffffff;
   /* Explicit black text as requested */
-  font-weight: 800 !important;
   background: rgba(79, 110, 247, 0.08);
 }
 
@@ -3155,4 +3154,77 @@ body.layout-fixed {
   font-size: 0.8rem;
   color: #64748b;
   margin: 2px 0 0 0;
+}
+
+/* Profile Tab Styles */
+.profile-section.card {
+  background: var(--panel-solid);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.profile-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-section-title::before {
+  content: " \;
+ display: block;
+  width: 4px;
+  height: 1.2rem;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+.profile-footer.card {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.profile-status-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.profile-status-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.profile-form-grid .field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.profile-form-grid .field input,
+.profile-form-grid .field select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.profile-form-grid .field input:focus,
+.profile-form-grid .field select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+  outline: none;
 }

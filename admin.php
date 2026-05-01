@@ -684,16 +684,20 @@ $studentPhone = $studentPhone ?? '';
                     </div>
                     <div class="users-admin-search">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" id="users-admin-search" placeholder="Search by name, email, student number, department, role, or facilitator status...">
+                        <input type="text" id="users-admin-search" placeholder="Search by name, email, student number, department, program, year level, role, or facilitator status...">
                     </div>
                     <div class="users-directory-tabs" id="users-directory-tabs">
-                        <button type="button" class="users-directory-tab active" data-users-pane="students">Students</button>
+                        <button type="button" class="users-directory-tab active" data-users-pane="general">General</button>
                         <button type="button" class="users-directory-tab" data-users-pane="staff">Staff</button>
                         <button type="button" class="users-directory-tab" data-users-pane="facilitators">Facilitators</button>
                         <button type="button" class="users-directory-tab" data-users-pane="admins">Admins</button>
                     </div>
 
-                    <div class="users-directory-pane active" id="users-pane-students">
+                    <div class="users-directory-pane active" id="users-pane-general">
+                        <div class="users-pane-head">
+                            <p class="users-pane-note">General users include students and non-students who can book appointments.</p>
+                            <button class="btn btn-primary btn-sm" type="button" id="open-add-general-modal">+ Add General</button>
+                        </div>
                         <div class="users-admin-table-wrap">
                             <table class="admin-table users-admin-table">
                                 <thead>
@@ -702,13 +706,17 @@ $studentPhone = $studentPhone ?? '';
                                         <th>Email</th>
                                         <th>Student No.</th>
                                         <th>College</th>
+                                        <th>Type</th>
+                                        <th>Year</th>
+                                        <th>Program</th>
+                                        <th>Status</th>
                                         <th>Role</th>
                                         <th>Facilitator</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="users-admin-students-tbody">
-                                    <tr><td colspan="7" style="padding: 1rem; color: #94a3b8;">Loading students...</td></tr>
+                                <tbody id="users-admin-general-tbody">
+                                    <tr><td colspan="11" style="padding: 1rem; color: #94a3b8;">Loading general users...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -809,6 +817,101 @@ $studentPhone = $studentPhone ?? '';
 
     <!-- Topic Modal -->
     <?php include 'components/admin_topic_modal.php'; ?>
+
+    <div class="modal-overlay admin-modal" id="add-general-modal">
+        <div class="modal-content admin-modal-card admin-modal-md">
+            <div class="modal-header">
+                <h3>Add General Account</h3>
+                <button class="btn-close" type="button" data-close-modal="add-general-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-general-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Student Number</label>
+                            <input type="text" class="form-control" name="student_number">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>College</label>
+                            <select class="form-control" name="department_id" id="add-general-dept">
+                                <option value="">Select College</option>
+                                <?php foreach ($departments as $dept): ?>
+                                    <option value="<?= (int) $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>User Type</label>
+                            <select class="form-control" name="user_type" id="add-general-user-type">
+                                <option value="student">Student</option>
+                                <option value="non-student" selected>Non-Student</option>
+                            </select>
+                        </div>
+                    </div>
+                    </div>
+                    <div id="add-general-student-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Program</label>
+                            <select class="form-control" name="course_program" id="add-general-program">
+                                <option value="">Select Program</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Course / Major</label>
+                            <input type="text" class="form-control" name="course" placeholder="e.g. Software Engineering">
+                        </div>
+                        <div class="form-group">
+                            <label>Year Level</label>
+                            <select class="form-control" name="year_level">
+                                <option value="">Select Year</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                                <option value="5th Year">5th Year</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select class="form-control" name="enrollment_status">
+                                <option value="Regular">Regular</option>
+                                <option value="Irregular">Irregular</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Enrollment Type</label>
+                            <select class="form-control" name="enrollment_type">
+                                <option value="">Select Type</option>
+                                <option value="New">New Student</option>
+                                <option value="Returning">Returning Student</option>
+                                <option value="Transferee">Transferee</option>
+                                <option value="Cross-Enrollee">Cross-Enrollee</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="admin-modal-footer">
+                        <button class="btn btn-primary" type="submit" style="flex:1;">Create General Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-overlay admin-modal" id="add-staff-modal">
         <div class="modal-content admin-modal-card admin-modal-sm">

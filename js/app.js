@@ -260,6 +260,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     loadFacilitators();
                 } else if (targetTab === 'my-sessions') {
                     loadFacilitatorSessions();
+                } else if (targetTab === 'profile') {
+                    loadProfile();
                 }
             });
         });
@@ -2288,5 +2290,148 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         } catch (e) {
             grid.innerHTML = '<p>Error loading sessions.</p>';
         }
+    }
+
+    async function loadProfile() {
+        const profileStatus = document.getElementById('profile-status');
+        if (profileStatus) profileStatus.style.display = 'none';
+
+        try {
+            const res = await fetch('api.php?action=get_user_info');
+            const data = await res.json();
+
+            if (data.success && data.user) {
+                const u = data.user;
+                document.getElementById('prof-name').value = u.name || '';
+                document.getElementById('prof-email').value = u.email || '';
+                
+                const deptSelect = document.getElementById('prof-department');
+                if (deptSelect) {
+                    if (deptSelect.options.length <= 1) {
+                        deptSelect.innerHTML = '<option value="">Select department</option>' + 
+                            allDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                    }
+                    deptSelect.value = u.department_id || '';
+                }
+
+                const isStudent = (u.user_type === 'student');
+                const studentSection = document.getElementById('prof-student-section');
+                if (studentSection) studentSection.style.display = isStudent ? 'block' : 'none';
+
+                if (isStudent) {
+                    document.getElementById('prof-student-number').value = u.student_number || '';
+                    document.getElementById('prof-course').value = u.course || '';
+                    document.getElementById('prof-year-level').value = u.year_level || '';
+                    document.getElementById('prof-enrollment-status').value = u.enrollment_status || 'Regular';
+                    document.getElementById('prof-enrollment-type').value = u.enrollment_type || '';
+                    await loadProfilePrograms(u.department_id, u.course_program);
+                }
+
+                document.getElementById('prof-role-badge').textContent = u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'General';
+                document.getElementById('prof-type-text').textContent = u.user_type ? u.user_type.charAt(0).toUpperCase() + u.user_type.slice(1) : 'N/A';
+            }
+        } catch (e) {
+            console.error("Failed to load profile:", e);
+        }
+    }
+
+    async function loadProfilePrograms(deptId, selectedProgramId = null) {
+        const programSelect = document.getElementById('prof-program');
+        if (!programSelect) return;
+
+        if (!deptId) {
+            programSelect.innerHTML = '<option value="">Select program</option>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`api.php?action=get_programs&department_id=${deptId}`);
+            const data = await res.json();
+            if (data.success) {
+                programSelect.innerHTML = '<option value="">Select program</option>' + 
+                    data.programs.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                if (selectedProgramId) programSelect.value = selectedProgramId;
+            }
+        } catch (e) {
+            console.error("Failed to load programs:", e);
+        }
+    }
+
+    const profileForm = document.getElementById('profile-update-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('prof-name').value;
+            const email = document.getElementById('prof-email').value;
+            const currentPassword = document.getElementById('prof-current-password').value;
+            const newPassword = document.getElementById('prof-new-password').value;
+            const confirmPassword = document.getElementById('prof-confirm-password').value;
+
+            if (newPassword && newPassword !== confirmPassword) {
+                showProfileStatus('New passwords do not match.', 'error');
+                return;
+            }
+
+            if (newPassword && !currentPassword) {
+                showProfileStatus('Please enter your current password to change it.', 'error');
+                return;
+            }
+
+            const payload = {
+                name,
+                email,
+                department_id: document.getElementById('prof-department').value,
+                student_number: document.getElementById('prof-student-number').value,
+                course: document.getElementById('prof-course').value,
+                year_level: document.getElementById('prof-year-level').value,
+                course_program: document.getElementById('prof-program').value,
+                enrollment_status: document.getElementById('prof-enrollment-status').value,
+                enrollment_type: document.getElementById('prof-enrollment-type').value,
+                current_password: currentPassword,
+                new_password: newPassword
+            };
+
+            try {
+                const res = await fetch('api.php?action=update_profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showProfileStatus('Profile updated successfully!', 'success');
+                    const sidebarName = document.querySelector('.pl-user strong');
+                    const sidebarAvatar = document.querySelector('.pl-avatar');
+                    if (sidebarName) sidebarName.textContent = name;
+                    if (sidebarAvatar) sidebarAvatar.textContent = name.trim().charAt(0).toUpperCase();
+                    
+                    document.getElementById('prof-current-password').value = '';
+                    document.getElementById('prof-new-password').value = '';
+                    document.getElementById('prof-confirm-password').value = '';
+                } else {
+                    showProfileStatus(data.message || 'Failed to update profile.', 'error');
+                }
+            } catch (err) {
+                showProfileStatus('An error occurred. Please try again.', 'error');
+            }
+        });
+    }
+
+    function showProfileStatus(msg, type) {
+        const el = document.getElementById('profile-status');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.background = type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+        el.style.color = type === 'success' ? '#059669' : '#dc2626';
+    }
+
+    const profDeptSelect = document.getElementById('prof-department');
+    if (profDeptSelect) {
+        profDeptSelect.addEventListener('change', () => {
+            loadProfilePrograms(profDeptSelect.value);
+        });
     }
 });

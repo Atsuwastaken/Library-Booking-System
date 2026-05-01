@@ -110,6 +110,13 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
                         My Sessions
                     </button>
                 <?php endif; ?>
+                <button class="pl-nav-btn tab-btn" data-tab="profile">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    My Profile
+                </button>
             </nav>
 
             <!-- Recent Appointments List -->
@@ -286,6 +293,122 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
                         </div>
                     </div>
                 <?php endif; ?>
+
+                <!-- Profile Tab Pane -->
+                <div class="tab-pane" id="profile-pane">
+                    <div class="profile-header-panel">
+                        <div class="section-title" style="margin-bottom: 2rem; padding: 2rem 2rem 0;">
+                            <h3>My Account Profile</h3>
+                            <p style="color: var(--text-secondary); margin-top: 0.5rem;">Update your personal information and security settings.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-container" style="max-width: 900px; margin: 0 auto; padding: 0 2rem 4rem;">
+                        <form id="profile-update-form" class="profile-form-grid">
+                            <div class="profile-section-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                                <div class="profile-section card">
+                                    <h4 class="profile-section-title">General Information</h4>
+                                    <div class="field">
+                                        <label>Full Name</label>
+                                        <input type="text" id="prof-name" name="name" required>
+                                    </div>
+                                    <div class="field">
+                                        <label>Email Address</label>
+                                        <input type="email" id="prof-email" name="email" required>
+                                    </div>
+                                    <div class="field">
+                                        <label>Department / College</label>
+                                        <select id="prof-department" name="department_id" required>
+                                            <option value="">Select department</option>
+                                            <!-- Populated via JS -->
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="profile-section card" id="prof-student-section" style="display: none;">
+                                    <h4 class="profile-section-title">Academic Details</h4>
+                                    <div class="field">
+                                        <label>Student Number</label>
+                                        <input type="text" id="prof-student-number" name="student_number">
+                                    </div>
+                                    <div class="field">
+                                        <label>Year Level</label>
+                                        <select id="prof-year-level" name="year_level">
+                                            <option value="">Select year</option>
+                                            <option value="1st Year">1st Year</option>
+                                            <option value="2nd Year">2nd Year</option>
+                                            <option value="3rd Year">3rd Year</option>
+                                            <option value="4th Year">4th Year</option>
+                                            <option value="5th Year">5th Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label>Course / Program</label>
+                                        <select id="prof-program" name="course_program">
+                                            <option value="">Select program</option>
+                                            <!-- Populated via JS -->
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label>Course / Major</label>
+                                        <input type="text" id="prof-course" name="course" placeholder="e.g. Software Engineering">
+                                    </div>
+                                    <div class="field">
+                                        <label>Enrollment Status</label>
+                                        <select id="prof-enrollment-status" name="enrollment_status">
+                                            <option value="Regular">Regular</option>
+                                            <option value="Irregular">Irregular</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label>Enrollment Type</label>
+                                        <select id="prof-enrollment-type" name="enrollment_type">
+                                            <option value="">Select type</option>
+                                            <option value="New">New Student</option>
+                                            <option value="Returning">Returning Student</option>
+                                            <option value="Transferee">Transferee</option>
+                                            <option value="Cross-Enrollee">Cross-Enrollee</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-section card" style="margin-bottom: 1.5rem;">
+                                <h4 class="profile-section-title">Security & Password</h4>
+                                <p class="helper-text" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Leave password fields blank if you don't want to change your current password.</p>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                                    <div class="field">
+                                        <label>Current Password</label>
+                                        <input type="password" id="prof-current-password" placeholder="Verification required">
+                                    </div>
+                                    <div class="field">
+                                        <label>New Password</label>
+                                        <input type="password" id="prof-new-password">
+                                    </div>
+                                    <div class="field">
+                                        <label>Confirm New Password</label>
+                                        <input type="password" id="prof-confirm-password">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="profile-footer card" style="display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 2rem;">
+                                <div class="system-info" style="display: flex; gap: 2rem;">
+                                    <div>
+                                        <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Account Role</label>
+                                        <span id="prof-role-badge" class="pl-badge">General</span>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">User Type</label>
+                                        <span id="prof-type-text" style="font-weight: 600; color: var(--text-main);">Student</span>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="btn-save-profile" style="padding: 0.8rem 2.5rem;">Save Changes</button>
+                            </div>
+                        </form>
+                        <div id="profile-status" style="margin-top: 1.5rem; text-align: center; border-radius: 12px; padding: 1.25rem; display: none; font-weight: 500;"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div><!-- /.app-shell -->

@@ -1214,22 +1214,34 @@ async function openDayOptionsModal(date, existingOffDay) {
 
     if (actionDateEl) actionDateEl.textContent = `Selection: ${date}`;
 
+    // Set up action modal button listeners
+    const bookBtn = document.getElementById('admin-calendar-action-book');
+    const offDayBtn = document.getElementById('admin-calendar-action-offday-btn');
+    const closeBtn = document.getElementById('admin-calendar-action-cancel');
+    const closeTop = document.getElementById('admin-calendar-action-close');
+
     if (existingOffDay) {
         if (actionOffDayEl) {
             actionOffDayEl.style.display = 'block';
             actionOffDayEl.textContent = `Off-Day: ${existingOffDay.description}`;
         }
         if (removeBtn) removeBtn.style.display = 'block';
+        if (bookBtn) {
+            bookBtn.disabled = true;
+            bookBtn.style.opacity = '0.5';
+            bookBtn.style.cursor = 'not-allowed';
+            bookBtn.title = 'Cannot book on an off-day';
+        }
     } else {
         if (actionOffDayEl) actionOffDayEl.style.display = 'none';
         if (removeBtn) removeBtn.style.display = 'none';
+        if (bookBtn) {
+            bookBtn.disabled = false;
+            bookBtn.style.opacity = '1';
+            bookBtn.style.cursor = 'pointer';
+            bookBtn.title = '';
+        }
     }
-
-    // Set up action modal button listeners
-    const bookBtn = document.getElementById('admin-calendar-action-book');
-    const offDayBtn = document.getElementById('admin-calendar-action-offday-btn');
-    const closeBtn = document.getElementById('admin-calendar-action-cancel');
-    const closeTop = document.getElementById('admin-calendar-action-close');
 
     const cleanup = () => {
         actionModal.classList.remove('active');

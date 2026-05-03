@@ -2276,8 +2276,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Sunday restriction or past/near-past
             if (thisDate < gapDate || thisDate.getDay() === 0) dayEl.classList.add('restricted');
+            
+            const offDay = allOffDays.find(od => od.date === dateStr);
+            if (offDay) {
+                dayEl.classList.add('restricted');
+                dayEl.classList.add('off-day');
+                dayEl.title = offDay.description || 'Off-day';
+            }
 
             dayEl.addEventListener('click', () => {
+                if (offDay) {
+                    showCalendarNotice(offDay.description ? offDay.description : 'This day is unavailable for booking.');
+                    return;
+                }
+
                 if (dayEl.classList.contains('restricted')) {
                     if (thisDate.getDay() === 0) {
                         alert('Library is closed on Sundays.');

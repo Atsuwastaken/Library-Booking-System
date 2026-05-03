@@ -3225,6 +3225,14 @@ body.layout-fixed {
   cursor: not-allowed;
 }
 
+.mini-day.off-day {
+  opacity: 0.8;
+  cursor: not-allowed;
+  background-color: #fff7ed;
+  border: 1px dashed #f97316;
+  color: #c2410c;
+}
+
 .mini-day.empty {
   opacity: 0.2;
   cursor: default;

@@ -88,6 +88,111 @@ if ($action === 'export_session_logs_csv') {
     exit;
 }
 
+if ($action === 'export_sessions_csv') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    $sessions = $service->exportSessionsWithDetails();
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="sessions_export_' . date('Ymd_His') . '.csv"');
+
+    $out = fopen('php://output', 'w');
+    fputcsv($out, [
+        'Session ID',
+        'Appointment Type',
+        'Topic',
+        'Date/Time',
+        'End Time',
+        'Mode',
+        'Venue',
+        'Status',
+        'Requester Name',
+        'Requester Email',
+        'Student Number',
+        'Year Level',
+        'Program',
+        'Department',
+        'Enrollment Status',
+        'Facilitator',
+        'Special Requests',
+        'Cancellation Reason'
+    ]);
+    foreach ($sessions as $row) {
+        fputcsv($out, [
+            $row['session_id'] ?? '',
+            $row['appointment_type'] ?? '',
+            $row['topic'] ?? '',
+            $row['date_time'] ?? '',
+            $row['end_time'] ?? '',
+            $row['mode'] ?? '',
+            $row['venue'] ?? '',
+            $row['booking_status'] ?? '',
+            $row['student_name'] ?? '',
+            $row['student_email'] ?? '',
+            $row['student_number'] ?? '',
+            $row['year_level'] ?? '',
+            $row['program_name'] ?? '',
+            $row['student_department'] ?? '',
+            $row['enrollment_status'] ?? '',
+            $row['facilitator_name'] ?? '',
+            $row['special_requests'] ?? '',
+            $row['cancellation_reason'] ?? ''
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
+if ($action === 'export_users_csv') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    $users = $service->getUsersForAdmin();
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="users_export_' . date('Y-m-d_H-i-s') . '.csv"');
+    $output = fopen('php://output', 'w');
+    fputcsv($output, [
+        'Name',
+        'Email',
+        'Role',
+        'User Type',
+        'Student Number',
+        'Department Name',
+        'Program Name',
+        'Year Level',
+        'Enrollment Status'
+    ]);
+    foreach ($users as $u) {
+        fputcsv($output, [
+            $u['name'],
+            $u['email'],
+            $u['role'],
+            $u['user_type'] ?? 'non-student',
+            $u['student_number'] ?? '',
+            $u['department_name'] ?? '',
+            $u['program_name'] ?? '',
+            $u['year_level'] ?? '',
+            $u['enrollment_status'] ?? ''
+        ]);
+    }
+    fclose($output);
+    exit;
+}
+
+if ($action === 'import_users_csv') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        echo json_encode(['success' => false, 'message' => 'No file uploaded or upload error.']);
+        exit;
+    }
+    try {
+        $results = $service->importUsersFromCSV($_FILES['csv_file']['tmp_name']);
+        echo json_encode(['success' => true, 'results' => $results]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
 if ($action === 'submit_registration') {
     $data = json_decode(file_get_contents('php://input'), true);
     $studentNumber = trim((string) ($data['student_number'] ?? ''));
@@ -98,9 +203,7 @@ if ($action === 'submit_registration') {
     $userType = $data['user_type'] ?? 'non-student';
     $yearLevel = $data['year_level'] ?? null;
     $courseProgram = $data['course_program'] ?? null;
-    $course = $data['course'] ?? null;
     $enrollmentStatus = $data['enrollment_status'] ?? null;
-    $enrollmentType = $data['enrollment_type'] ?? null;
 
     if ($name === '' || $email === '' || $password === '' || $departmentId <= 0) {
         echo json_encode(['success' => false, 'message' => 'Name, email, password, and department are required.']);
@@ -108,11 +211,11 @@ if ($action === 'submit_registration') {
     }
 
     try {
-        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'general', null, $userType, $yearLevel, $courseProgram, $course, $enrollmentStatus, $enrollmentType);
+        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'general', null, $userType, $yearLevel, $courseProgram, $enrollmentStatus);
         echo json_encode([
             'success' => $success,
             'message' => $success
-                ? 'Registration successful. You may now log in.'
+                ? 'Registration successful. Request sent to admin for approval.'
                 : 'Unable to register.'
         ]);
     } catch (Exception $e) {
@@ -156,9 +259,7 @@ if ($action === 'approve_registration_request') {
     $userType = $data['user_type'] ?? 'non-student';
     $yearLevel = $data['year_level'] ?? null;
     $courseProgram = $data['course_program'] ?? null;
-    $course = $data['course'] ?? null;
     $enrollmentStatus = $data['enrollment_status'] ?? null;
-    $enrollmentType = $data['enrollment_type'] ?? null;
 
     if ($requestId <= 0) {
         echo json_encode(['success' => false, 'message' => 'Invalid request id.']);
@@ -175,9 +276,7 @@ if ($action === 'approve_registration_request') {
             $userType,
             $yearLevel,
             $courseProgram,
-            $course,
-            $enrollmentStatus,
-            $enrollmentType
+            $enrollmentStatus
         );
         echo json_encode(['success' => $success]);
     } catch (Exception $e) {
@@ -204,55 +303,32 @@ if ($action === 'reject_registration_request') {
     exit;
 }
 
+if ($action === 'update_user_admin') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    if (!$data || !isset($data['id'])) {
+        echo json_encode(['success' => false, 'message' => 'Invalid data.']);
+        exit;
+    }
+
+    try {
+        $success = $service->updateUserAdmin($data);
+        echo json_encode(['success' => $success]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+
 if ($action === 'get_users_admin') {
     requireAuthenticatedUserId();
     requireAdminSession();
 
     $users = $service->getUsersForAdmin();
     echo json_encode(['success' => true, 'users' => $users]);
-    exit;
-}
-
-if ($action === 'update_user_admin') {
-    requireAuthenticatedUserId();
-    requireAdminSession();
-
-    $data = json_decode(file_get_contents('php://input'), true);
-    $id = (int) ($data['id'] ?? 0);
-    $name = trim((string) ($data['name'] ?? ''));
-    $email = trim((string) ($data['email'] ?? ''));
-    $studentNumber = trim((string) ($data['student_number'] ?? ''));
-    $role = trim((string) ($data['role'] ?? 'general'));
-    $departmentId = (int) ($data['department_id'] ?? 0);
-    $facilitatorEnabled = !empty($data['facilitator_enabled']);
-    $userType = $data['user_type'] ?? 'non-student';
-    $yearLevel = $data['year_level'] ?? null;
-    $courseProgram = $data['course_program'] ?? null;
-    $course = $data['course'] ?? null;
-    $enrollmentStatus = $data['enrollment_status'] ?? null;
-    $enrollmentType = $data['enrollment_type'] ?? null;
-
-    if ($id <= 0 || $name === '' || $email === '') {
-        echo json_encode(['success' => false, 'message' => 'User id, name, and email are required.']);
-        exit;
-    }
-
-    $success = $service->updateUserByAdmin(
-        $id,
-        $name,
-        $email,
-        $studentNumber,
-        $role,
-        $departmentId > 0 ? $departmentId : null,
-        $facilitatorEnabled,
-        $userType,
-        $yearLevel,
-        $courseProgram,
-        $course,
-        $enrollmentStatus,
-        $enrollmentType
-    );
-    echo json_encode(['success' => $success]);
     exit;
 }
 
@@ -267,13 +343,12 @@ if ($action === 'add_user_admin') {
     $studentNumber = trim((string) ($data['student_number'] ?? ''));
     $role = trim((string) ($data['role'] ?? 'staff'));
     $departmentId = (int) ($data['department_id'] ?? 0);
-    $facilitatorEnabled = !empty($data['facilitator_enabled']);
+    $facilitatorId = !empty($data['facilitator_id']) ? (int) $data['facilitator_id'] : null;
+    $facilitatorEnabled = !empty($data['facilitator_enabled']); // legacy fallback
     $userType = $data['user_type'] ?? 'non-student';
     $yearLevel = $data['year_level'] ?? null;
     $courseProgram = $data['course_program'] ?? null;
-    $course = $data['course'] ?? null;
     $enrollmentStatus = $data['enrollment_status'] ?? null;
-    $enrollmentType = $data['enrollment_type'] ?? null;
 
     if ($name === '' || $email === '' || $password === '') {
         echo json_encode(['success' => false, 'message' => 'Name, email, and password are required.']);
@@ -292,9 +367,8 @@ if ($action === 'add_user_admin') {
             $userType,
             $yearLevel,
             $courseProgram,
-            $course,
             $enrollmentStatus,
-            $enrollmentType
+            $facilitatorId
         );
 
         echo json_encode(['success' => true, 'user_id' => $userId]);
@@ -330,6 +404,21 @@ if ($action === 'delete_user_admin') {
     exit;
 }
 
+if ($action === 'delete_all_users_admin') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
+    $ids = $data['ids'] ?? null;
+    try {
+        $service->deleteAllUsersByAdmin($currentUserId, $ids);
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
 if ($action === 'get_sessions') {
     $sessions = $service->getAvailableSessions();
     echo json_encode(['success' => true, 'sessions' => $sessions]);
@@ -357,7 +446,7 @@ if ($action === 'confirm_booking') {
     $sessionId = $data['session_id'] ?? 0;
     $specialRequests = $data['special_requests'] ?? '';
     $userId = requireAuthenticatedUserId();
-    
+
     $success = $service->confirmBooking($sessionId, $userId, $specialRequests);
     echo json_encode(['success' => $success]);
     exit;
@@ -515,20 +604,18 @@ if ($action === 'advanced_booking') {
     $email = $data['email'] ?? '';
     $phone = $data['phone'] ?? '';
     $notes = $data['notes'] ?? '';
-    $reminder = $data['reminder'] ?? '30';
     $requesterDepartment = $data['department'] ?? '';
     $topic = $data['topic'] ?? 'General Consultation';
     $customRequestor = $data['custom_requestor'] ?? null;
-    
+
     $userId = requireAuthenticatedUserId();
-    
+
     $requestDetails = [
         'name' => $name,
         'email' => $email,
         'phone' => $phone,
         'department' => $requesterDepartment,
-        'notes' => $notes,
-        'reminder' => $reminder
+        'notes' => $notes
     ];
 
     try {
@@ -545,7 +632,24 @@ if ($action === 'get_appointments') {
     $isAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
     $user = $service->getUserInfo($userId);
     $facilitatorId = $user['facilitator_id'] ?? null;
-    $apps = $service->getAppointments($userId, $isAdmin, $facilitatorId);
+
+    // If my_appointments=true, always scope to the requesting user (even for admins)
+    $myAppointments = ($_GET['my_appointments'] ?? '') === 'true';
+    if ($myAppointments) {
+        $isAdmin = false;
+    }
+
+    $filters = [
+        'requestor' => $_GET['requestor'] ?? 'all',
+        'college' => $_GET['college'] ?? 'all',
+        'facilitator' => $_GET['facilitator'] ?? 'all',
+        'status' => $_GET['status'] ?? 'all',
+        'datetime' => $_GET['datetime'] ?? 'newest',
+        'date' => $_GET['date'] ?? '',
+        'include_archived' => ($_GET['include_archived'] ?? '') === 'true'
+    ];
+
+    $apps = $service->getAppointments($userId, $isAdmin, $facilitatorId, $filters);
     echo json_encode(['success' => true, 'appointments' => $apps]);
     exit;
 }
@@ -565,12 +669,18 @@ if ($action === 'update_appointment') {
         requireAdminSession();
     }
 
-    $success = $service->updateAppointment($id, $status, $venue, $facId, $cancellationReason, $cancelledBy, $evaluationNotes);
-    echo json_encode(['success' => $success]);
+    $result = $service->updateAppointment($id, $status, $venue, $facId, $cancellationReason, $cancelledBy, $evaluationNotes);
+    if ($result === true) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'message' => $result]);
+    }
     exit;
 }
 
 if ($action === 'cancel_appointment') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
     $data = json_decode(file_get_contents('php://input'), true);
     $id = $data['id'] ?? 0;
     $cancellationReason = $data['cancellation_reason'] ?? null;
@@ -581,10 +691,52 @@ if ($action === 'cancel_appointment') {
 }
 
 if ($action === 'change_instructor') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
     $data = json_decode(file_get_contents('php://input'), true);
     $id = $data['id'] ?? 0;
     $facilitatorId = $data['facilitator_id'] ?? null;
     $success = $service->changeInstructorToTba($id, $facilitatorId);
+    echo json_encode(['success' => $success]);
+    exit;
+}
+
+if ($action === 'archive_session') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $id = $data['id'] ?? 0;
+    $success = $service->archiveSession($id);
+    echo json_encode(['success' => $success]);
+    exit;
+}
+
+if ($action === 'unarchive_session') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $id = $data['id'] ?? 0;
+    $success = $service->unarchiveSession($id);
+    echo json_encode(['success' => $success]);
+    exit;
+}
+
+if ($action === 'bulk_archive_sessions') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $ids = $data['ids'] ?? [];
+    $success = $service->bulkArchiveSessions($ids);
+    echo json_encode(['success' => $success]);
+    exit;
+}
+
+if ($action === 'bulk_unarchive_sessions') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+    $data = json_decode(file_get_contents('php://input'), true);
+    $ids = $data['ids'] ?? [];
+    $success = $service->bulkUnarchiveSessions($ids);
     echo json_encode(['success' => $success]);
     exit;
 }
@@ -643,7 +795,22 @@ if ($action === 'add_seminar') {
     $dt = $data['date_time'] ?? '';
     $speaker = $data['speaker'] ?? '';
     $venue = $data['venue'] ?? '';
-    $success = $service->addSeminar($title, $desc, $dt, $speaker, $venue);
+    $facilitatorId = !empty($data['facilitator_id']) ? (int) $data['facilitator_id'] : null;
+    $success = $service->addSeminar($title, $desc, $dt, $speaker, $venue, $facilitatorId);
+    echo json_encode(['success' => $success]);
+    exit;
+}
+
+if ($action === 'update_seminar') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $id = (int) ($data['id'] ?? 0);
+    $title = $data['title'] ?? '';
+    $desc = $data['description'] ?? '';
+    $dt = $data['date_time'] ?? '';
+    $speaker = $data['speaker'] ?? '';
+    $venue = $data['venue'] ?? '';
+    $facilitatorId = !empty($data['facilitator_id']) ? (int) $data['facilitator_id'] : null;
+    $success = $service->updateSeminar($id, $title, $desc, $dt, $speaker, $venue, $facilitatorId);
     echo json_encode(['success' => $success]);
     exit;
 }

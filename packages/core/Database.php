@@ -47,9 +47,7 @@ class Database
                 user_type TEXT DEFAULT 'non-student',
                 year_level TEXT,
                 course_program INTEGER,
-                course TEXT,
                 enrollment_status TEXT,
-                enrollment_type TEXT,
                 FOREIGN KEY(department_id) REFERENCES department(id),
                 FOREIGN KEY(facilitator_id) REFERENCES facilitators(id),
                 FOREIGN KEY(course_program) REFERENCES programs(id)
@@ -114,9 +112,11 @@ class Database
                 requester_name TEXT,
                 requester_email TEXT,
                 requester_department TEXT,
-                notification_minutes INTEGER DEFAULT 30,
                 cancellation_reason TEXT,
                 cancelled_date_time TEXT,
+                cancelled_by TEXT,
+                archived_at TEXT,
+                created_date TEXT DEFAULT (datetime('now', 'localtime')),
                 FOREIGN KEY(facilitator_id) REFERENCES facilitators(id),
                 FOREIGN KEY(user_id) REFERENCES users(id)
             );
@@ -127,7 +127,9 @@ class Database
                 description TEXT,
                 date_time TEXT,
                 speaker TEXT,
-                venue TEXT DEFAULT 'Library Main Hall'
+                venue TEXT DEFAULT 'Library Main Hall',
+                facilitator_id INTEGER,
+                FOREIGN KEY(facilitator_id) REFERENCES facilitators(id)
             );
 
             CREATE TABLE IF NOT EXISTS off_days (
@@ -163,9 +165,7 @@ class Database
                     user_type TEXT DEFAULT 'non-student',
                     year_level TEXT,
                     course_program INTEGER,
-                    course TEXT,
                     enrollment_status TEXT,
-                    enrollment_type TEXT,
                     requested_role TEXT DEFAULT 'general',
                     requested_facilitator_id INTEGER,
                     status TEXT DEFAULT 'PENDING',
@@ -230,25 +230,29 @@ class Database
         $this->ensureColumn('sessions', 'requester_name', 'TEXT');
         $this->ensureColumn('sessions', 'requester_email', 'TEXT');
         $this->ensureColumn('sessions', 'requester_department_id', 'INTEGER');
-        $this->ensureColumn('sessions', 'notification_minutes', 'INTEGER DEFAULT 30');
+
         $this->ensureColumn('sessions', 'cancellation_reason', 'TEXT');
         $this->ensureColumn('sessions', 'cancelled_date_time', 'TEXT');
         $this->ensureColumn('sessions', 'cancelled_by', 'TEXT');
         $this->ensureColumn('sessions', 'evaluation_notes', 'TEXT');
+        $this->ensureColumn('sessions', 'archived_at', 'TEXT');
+        $this->ensureColumn('sessions', 'created_date', "TEXT");
+        $this->ensureColumn('sessions', 'guest_speaker', 'TEXT');
+        $this->ensureColumn('seminars', 'facilitator_id', 'INTEGER');
 
         $this->ensureColumn('users', 'user_type', "TEXT DEFAULT 'non-student'");
         $this->ensureColumn('users', 'year_level', 'TEXT');
         $this->ensureColumn('users', 'course_program', 'INTEGER');
-        $this->ensureColumn('users', 'course', 'TEXT');
+
         $this->ensureColumn('users', 'enrollment_status', 'TEXT');
-        $this->ensureColumn('users', 'enrollment_type', 'TEXT');
+
 
         $this->ensureColumn('registration_requests', 'user_type', "TEXT DEFAULT 'non-student'");
         $this->ensureColumn('registration_requests', 'year_level', 'TEXT');
         $this->ensureColumn('registration_requests', 'course_program', 'INTEGER');
-        $this->ensureColumn('registration_requests', 'course', 'TEXT');
+
         $this->ensureColumn('registration_requests', 'enrollment_status', 'TEXT');
-        $this->ensureColumn('registration_requests', 'enrollment_type', 'TEXT');
+
 
         $this->pdo->exec("UPDATE users SET role = 'general' WHERE LOWER(role) = 'student'");
 

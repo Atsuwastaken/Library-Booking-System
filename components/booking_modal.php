@@ -169,16 +169,7 @@ $readonlyAttr = $isStudent ? 'readonly style="background-color: #e2e8f0; cursor:
                 </div>
             </div>
 
-            <!-- 7. Reminder -->
-            <div class="booking-section">
-                <label for="book-reminder" class="label-new">Set a Reminder:</label>
-                <select id="book-reminder" class="select-new">
-                    <option value="10">10 minutes before appointment</option>
-                    <option value="30">30 minutes before appointment</option>
-                    <option value="60" selected>1 hour before appointment</option>
-                    <option value="1440">1 day before appointment</option>
-                </select>
-            </div>
+
 
             <div class="booking-footer-info">
                 <p>Your Appointment status will be "Pending" until the Library admin "Confirms" or "Cancels" your booking request, you will be notified through email if your appointment was accepted. The VENUE or PLATFORM will also be appointed by the library admin.</p>

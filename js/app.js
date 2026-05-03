@@ -69,93 +69,93 @@ document.addEventListener('DOMContentLoaded', () => {
             userSidebar.classList.toggle('active');
         });
 
-function openCancellationReasonModal({
-    title = 'Cancel Appointment',
-    message = 'You may optionally provide a reason before confirming cancellation.',
-    confirmText = 'Confirm Cancellation',
-    cancelText = 'Keep Appointment',
-    reasonLabel = 'Cancellation reason (optional)',
-    reasonPlaceholder = 'Type a reason, or leave blank to continue...'
-} = {}) {
-    const modal = document.getElementById('cancel-reason-modal');
-    const titleEl = document.getElementById('cancel-reason-title');
-    const messageEl = document.getElementById('cancel-reason-message');
-    const reasonLabelEl = document.getElementById('cancel-reason-label');
-    const reasonEl = document.getElementById('cancel-reason-input');
-    const closeBtn = document.getElementById('cancel-reason-close');
-    const confirmBtn = document.getElementById('cancel-reason-confirm');
+        function openCancellationReasonModal({
+            title = 'Cancel Appointment',
+            message = 'You may optionally provide a reason before confirming cancellation.',
+            confirmText = 'Confirm Cancellation',
+            cancelText = 'Keep Appointment',
+            reasonLabel = 'Cancellation reason (optional)',
+            reasonPlaceholder = 'Type a reason, or leave blank to continue...'
+        } = {}) {
+            const modal = document.getElementById('cancel-reason-modal');
+            const titleEl = document.getElementById('cancel-reason-title');
+            const messageEl = document.getElementById('cancel-reason-message');
+            const reasonLabelEl = document.getElementById('cancel-reason-label');
+            const reasonEl = document.getElementById('cancel-reason-input');
+            const closeBtn = document.getElementById('cancel-reason-close');
+            const confirmBtn = document.getElementById('cancel-reason-confirm');
 
-    // If modal is unavailable, safely abort instead of using native browser dialogs.
-    if (!modal || !reasonEl || !closeBtn || !confirmBtn) {
-        console.warn('Cancellation modal is not available in DOM.');
-        return Promise.resolve(null);
-    }
+            // If modal is unavailable, safely abort instead of using native browser dialogs.
+            if (!modal || !reasonEl || !closeBtn || !confirmBtn) {
+                console.warn('Cancellation modal is not available in DOM.');
+                return Promise.resolve(null);
+            }
 
-    if (titleEl) titleEl.textContent = title;
-    if (messageEl) messageEl.textContent = message;
-    if (reasonLabelEl) reasonLabelEl.textContent = reasonLabel;
-    closeBtn.textContent = cancelText;
-    confirmBtn.textContent = confirmText;
-    reasonEl.value = '';
-    reasonEl.placeholder = reasonPlaceholder;
+            if (titleEl) titleEl.textContent = title;
+            if (messageEl) messageEl.textContent = message;
+            if (reasonLabelEl) reasonLabelEl.textContent = reasonLabel;
+            closeBtn.textContent = cancelText;
+            confirmBtn.textContent = confirmText;
+            reasonEl.value = '';
+            reasonEl.placeholder = reasonPlaceholder;
 
-    return new Promise(resolve => {
-        const onConfirm = () => {
-            const val = reasonEl.value.trim();
-            cleanup();
-            resolve(val);
-        };
+            return new Promise(resolve => {
+                const onConfirm = () => {
+                    const val = reasonEl.value.trim();
+                    cleanup();
+                    resolve(val);
+                };
 
-        const onClose = () => {
-            cleanup();
-            resolve(null);
-        };
+                const onClose = () => {
+                    cleanup();
+                    resolve(null);
+                };
 
-        const onBackdrop = (e) => {
-            if (e.target === modal) onClose();
-        };
+                const onBackdrop = (e) => {
+                    if (e.target === modal) onClose();
+                };
 
-        const onEsc = (e) => {
-            if (e.key === 'Escape') onClose();
-        };
+                const onEsc = (e) => {
+                    if (e.key === 'Escape') onClose();
+                };
 
-        function cleanup() {
-            modal.classList.remove('active');
-            confirmBtn.removeEventListener('click', onConfirm);
-            closeBtn.removeEventListener('click', onClose);
-            modal.removeEventListener('click', onBackdrop);
-            document.removeEventListener('keydown', onEsc);
+                function cleanup() {
+                    modal.classList.remove('active');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    closeBtn.removeEventListener('click', onClose);
+                    modal.removeEventListener('click', onBackdrop);
+                    document.removeEventListener('keydown', onEsc);
+                }
+
+                confirmBtn.addEventListener('click', onConfirm);
+                closeBtn.addEventListener('click', onClose);
+                modal.addEventListener('click', onBackdrop);
+                document.addEventListener('keydown', onEsc);
+                modal.classList.add('active');
+                reasonEl.focus();
+            });
         }
 
-        confirmBtn.addEventListener('click', onConfirm);
-        closeBtn.addEventListener('click', onClose);
-        modal.addEventListener('click', onBackdrop);
-        document.addEventListener('keydown', onEsc);
-        modal.classList.add('active');
-        reasonEl.focus();
-    });
-}
+        function openChangeInstructorModal(facilitators = [], currentFacilitatorId = null) {
+            const modal = document.getElementById('change-instructor-modal');
+            const listEl = document.getElementById('change-instructor-list');
+            const closeBtn = document.getElementById('change-instructor-close');
+            const confirmBtn = document.getElementById('change-instructor-confirm');
+            let selectedFacilitatorId = null;
 
-function openChangeInstructorModal(facilitators = [], currentFacilitatorId = null) {
-    const modal = document.getElementById('change-instructor-modal');
-    const listEl = document.getElementById('change-instructor-list');
-    const closeBtn = document.getElementById('change-instructor-close');
-    const confirmBtn = document.getElementById('change-instructor-confirm');
-    let selectedFacilitatorId = null;
+            if (!modal || !listEl || !closeBtn || !confirmBtn) {
+                console.warn('Change instructor modal is not available in DOM.');
+                return Promise.resolve(null);
+            }
 
-    if (!modal || !listEl || !closeBtn || !confirmBtn) {
-        console.warn('Change instructor modal is not available in DOM.');
-        return Promise.resolve(null);
-    }
-
-    listEl.innerHTML = '';
-    if (!facilitators.length) {
-        listEl.innerHTML = '<div class="loader-container">No available facilitators for this topic.</div>';
-    } else {
-        facilitators.forEach(f => {
-            const card = document.createElement('div');
-            card.className = 'fac-card-new';
-            card.innerHTML = `
+            listEl.innerHTML = '';
+            if (!facilitators.length) {
+                listEl.innerHTML = '<div class="loader-container">No available facilitators for this topic.</div>';
+            } else {
+                facilitators.forEach(f => {
+                    const card = document.createElement('div');
+                    card.className = 'fac-card-new';
+                    card.innerHTML = `
                 <div class="fac-avatar-new">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 </div>
@@ -165,62 +165,62 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                 </div>
             `;
 
-            card.addEventListener('click', () => {
-                listEl.querySelectorAll('.fac-card-new').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                selectedFacilitatorId = String(f.id);
+                    card.addEventListener('click', () => {
+                        listEl.querySelectorAll('.fac-card-new').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedFacilitatorId = String(f.id);
+                    });
+
+                    if (currentFacilitatorId && String(f.id) === String(currentFacilitatorId)) {
+                        card.classList.add('selected');
+                        selectedFacilitatorId = String(f.id);
+                    }
+
+                    listEl.appendChild(card);
+                });
+            }
+
+            return new Promise(resolve => {
+                const onConfirm = () => {
+                    if (!selectedFacilitatorId) {
+                        alert('Please select an instructor first.');
+                        return;
+                    }
+                    cleanup();
+                    resolve(selectedFacilitatorId);
+                };
+
+                const onClose = () => {
+                    cleanup();
+                    resolve(null);
+                };
+
+                const onBackdrop = (e) => {
+                    if (e.target === modal) onClose();
+                };
+
+                const onEsc = (e) => {
+                    if (e.key === 'Escape') onClose();
+                };
+
+                function cleanup() {
+                    modal.classList.remove('active');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    closeBtn.removeEventListener('click', onClose);
+                    modal.removeEventListener('click', onBackdrop);
+                    document.removeEventListener('keydown', onEsc);
+                }
+
+                confirmBtn.addEventListener('click', onConfirm);
+                closeBtn.addEventListener('click', onClose);
+                modal.addEventListener('click', onBackdrop);
+                document.addEventListener('keydown', onEsc);
+                modal.classList.add('active');
+                if (listEl.firstElementChild && listEl.firstElementChild.classList.contains('fac-card-new')) {
+                    listEl.firstElementChild.focus?.();
+                }
             });
-
-            if (currentFacilitatorId && String(f.id) === String(currentFacilitatorId)) {
-                card.classList.add('selected');
-                selectedFacilitatorId = String(f.id);
-            }
-
-            listEl.appendChild(card);
-        });
-    }
-
-    return new Promise(resolve => {
-        const onConfirm = () => {
-            if (!selectedFacilitatorId) {
-                alert('Please select an instructor first.');
-                return;
-            }
-            cleanup();
-            resolve(selectedFacilitatorId);
-        };
-
-        const onClose = () => {
-            cleanup();
-            resolve(null);
-        };
-
-        const onBackdrop = (e) => {
-            if (e.target === modal) onClose();
-        };
-
-        const onEsc = (e) => {
-            if (e.key === 'Escape') onClose();
-        };
-
-        function cleanup() {
-            modal.classList.remove('active');
-            confirmBtn.removeEventListener('click', onConfirm);
-            closeBtn.removeEventListener('click', onClose);
-            modal.removeEventListener('click', onBackdrop);
-            document.removeEventListener('keydown', onEsc);
         }
-
-        confirmBtn.addEventListener('click', onConfirm);
-        closeBtn.addEventListener('click', onClose);
-        modal.addEventListener('click', onBackdrop);
-        document.addEventListener('keydown', onEsc);
-        modal.classList.add('active');
-        if (listEl.firstElementChild && listEl.firstElementChild.classList.contains('fac-card-new')) {
-            listEl.firstElementChild.focus?.();
-        }
-    });
-}
 
         document.addEventListener('click', (e) => {
             if (userSidebar.classList.contains('active') && !userSidebar.contains(e.target) && e.target !== avatarBtn && !avatarBtn.contains(e.target)) {
@@ -374,7 +374,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         if (allSessions.length === 0 || forceFetch) {
             try {
                 const [appointmentsRes, offDaysRes] = await Promise.all([
-                    fetch('api.php?action=get_appointments'),
+                    fetch('api.php?action=get_appointments&my_appointments=true'),
                     fetch('api.php?action=get_off_days')
                 ]);
 
@@ -447,8 +447,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
 
             if (data.success && Array.isArray(data.facilitators)) {
                 list.innerHTML = '';
-                const instructors = data.facilitators.slice(0, 5); 
-                
+                const instructors = data.facilitators.slice(0, 5);
+
                 if (instructors.length === 0) {
                     list.innerHTML = '<div style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 1rem 0;">No instructors available.</div>';
                     return;
@@ -1121,7 +1121,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         try {
             let url = 'api.php?action=get_topics';
             if (deptId) url += `&department_id=${deptId}`;
-            
+
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
@@ -1563,7 +1563,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             zone.className = `axis-zone ${className}`;
             zone.style.left = `${left}%`;
             zone.style.width = `${width}%`;
-            
+
             // Format time for tooltip
             const formatHour = (h) => {
                 const hour = Math.floor(h);
@@ -1577,7 +1577,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const eLabel = formatHour(e);
             const typeLabel = className === 'zone-lunch' ? 'Lunch Break' : (className === 'zone-booked' ? 'Already Booked' : 'Your Selection');
             zone.title = `${typeLabel}: ${sLabel} - ${eLabel}`;
-            
+
             container.appendChild(zone);
         }
     }
@@ -1730,7 +1730,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     return;
                 }
             }
-            
+
             if (reqName || reqEmail || (reqDept && reqDept.value)) {
                 customRequestor.name = reqName;
                 customRequestor.email = reqEmail;
@@ -1746,7 +1746,6 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                 phone: document.getElementById('book-phone').value,
                 department: (currentUser && currentUser.department_id) ? currentUser.department_id : '',
                 notes: document.getElementById('book-notes').value,
-                reminder: document.getElementById('book-reminder').value,
                 mode: mode,
                 facilitator_id: finalFacId,
                 date: selectedDate,
@@ -1857,7 +1856,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         }
 
         try {
-            const res = await fetch('api.php?action=get_appointments');
+            const res = await fetch('api.php?action=get_appointments&my_appointments=true');
             const data = await res.json();
 
             if (data.success) {
@@ -1890,8 +1889,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const emptyText = appointmentsSubview === 'cancelled'
                 ? 'No cancelled/declined appointments found.'
                 : appointmentsSubview === 'completed'
-                ? 'No completed appointments found.'
-                : 'No appointments found.';
+                    ? 'No completed appointments found.'
+                    : 'No appointments found.';
             grid.innerHTML = `<div class="loader-container">${emptyText}</div>`;
             return;
         }
@@ -2138,7 +2137,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         if (!miniGrid) return;
 
         miniGrid.innerHTML = '';
-        
+
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         if (miniDateDisplay) {
             miniDateDisplay.textContent = `${monthNames[miniCurrentMonth]} ${miniCurrentYear}`;
@@ -2174,13 +2173,13 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const dayEl = document.createElement('div');
             dayEl.className = 'mini-day';
             dayEl.textContent = i;
-            
+
             const thisDate = new Date(miniCurrentYear, miniCurrentMonth, i);
             const dateStr = formatLocalDate(thisDate);
-            
+
             if (dateStr === todayStr) dayEl.classList.add('today');
             if (dateStr === selectedDate) dayEl.classList.add('selected');
-            
+
             // Sunday restriction or past/near-past
             if (thisDate < gapDate || thisDate.getDay() === 0) dayEl.classList.add('restricted');
 
@@ -2193,11 +2192,11 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     }
                     return;
                 }
-                
+
                 selectedDate = dateStr;
                 document.querySelectorAll('.mini-day').forEach(d => d.classList.remove('selected'));
                 dayEl.classList.add('selected');
-                
+
                 if (typeof openAdvancedBooking === 'function') {
                     openAdvancedBooking(dateStr);
                 }
@@ -2240,7 +2239,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
 
     // Hook into updateCalendar
     const originalUpdateCalendar = updateCalendar;
-    updateCalendar = async function(forceFetch = false) {
+    updateCalendar = async function (forceFetch = false) {
         await originalUpdateCalendar(forceFetch);
         renderMiniCalendar();
     };
@@ -2268,7 +2267,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     card.className = 'session-card';
                     const dt = new Date(s.date_time.replace(/-/g, '/'));
                     const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
+
                     card.innerHTML = `
                         <div class="session-top">
                             <span class="session-type">${s.type}</span>
@@ -2304,11 +2303,11 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                 const u = data.user;
                 document.getElementById('prof-name').value = u.name || '';
                 document.getElementById('prof-email').value = u.email || '';
-                
+
                 const deptSelect = document.getElementById('prof-department');
                 if (deptSelect) {
                     if (deptSelect.options.length <= 1) {
-                        deptSelect.innerHTML = '<option value="">Select department</option>' + 
+                        deptSelect.innerHTML = '<option value="">Select department</option>' +
                             allDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
                     }
                     deptSelect.value = u.department_id || '';
@@ -2320,10 +2319,19 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
 
                 if (isStudent) {
                     document.getElementById('prof-student-number').value = u.student_number || '';
-                    document.getElementById('prof-course').value = u.course || '';
                     document.getElementById('prof-year-level').value = u.year_level || '';
                     document.getElementById('prof-enrollment-status').value = u.enrollment_status || 'Regular';
-                    document.getElementById('prof-enrollment-type').value = u.enrollment_type || '';
+
+                    const deptName = deptSelect.options[deptSelect.selectedIndex]?.text || '';
+                    const isBasicEd = ["Grade School", "Junior High School", "Preschool"].some(d => deptName.toLowerCase().includes(d.toLowerCase()));
+                    const programField = document.getElementById('prof-program')?.closest('.field');
+                    const yearField = document.getElementById('prof-year-level')?.closest('.field');
+                    const statusField = document.getElementById('prof-enrollment-status')?.closest('.field');
+
+                    if (programField) programField.style.display = isBasicEd ? 'none' : 'block';
+                    if (yearField) yearField.style.display = isBasicEd ? 'none' : 'block';
+                    if (statusField) statusField.style.display = isBasicEd ? 'none' : 'block';
+
                     await loadProfilePrograms(u.department_id, u.course_program);
                 }
 
@@ -2339,6 +2347,26 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         const programSelect = document.getElementById('prof-program');
         if (!programSelect) return;
 
+        const deptSelect = document.getElementById('prof-department');
+        const deptName = deptSelect?.options[deptSelect.selectedIndex]?.text || '';
+        const isBasicEd = ["Grade School", "Junior High School", "Preschool"].some(d => deptName.toLowerCase().includes(d.toLowerCase()));
+        const programField = programSelect.closest('.field');
+        const yearField = document.getElementById('prof-year-level')?.closest('.field');
+        const statusField = document.getElementById('prof-enrollment-status')?.closest('.field');
+
+        if (programField) {
+            programField.style.display = isBasicEd ? 'none' : 'block';
+            if (isBasicEd) programSelect.value = '';
+        }
+        if (yearField) {
+            yearField.style.display = isBasicEd ? 'none' : 'block';
+            if (isBasicEd) document.getElementById('prof-year-level').value = '';
+        }
+        if (statusField) {
+            statusField.style.display = isBasicEd ? 'none' : 'block';
+            if (isBasicEd) document.getElementById('prof-enrollment-status').value = '';
+        }
+
         if (!deptId) {
             programSelect.innerHTML = '<option value="">Select program</option>';
             return;
@@ -2348,7 +2376,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const res = await fetch(`api.php?action=get_programs&department_id=${deptId}`);
             const data = await res.json();
             if (data.success) {
-                programSelect.innerHTML = '<option value="">Select program</option>' + 
+                programSelect.innerHTML = '<option value="">Select program</option>' +
                     data.programs.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
                 if (selectedProgramId) programSelect.value = selectedProgramId;
             }
@@ -2361,7 +2389,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
     if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const name = document.getElementById('prof-name').value;
             const email = document.getElementById('prof-email').value;
             const currentPassword = document.getElementById('prof-current-password').value;
@@ -2383,11 +2411,10 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                 email,
                 department_id: document.getElementById('prof-department').value,
                 student_number: document.getElementById('prof-student-number').value,
-                course: document.getElementById('prof-course').value,
                 year_level: document.getElementById('prof-year-level').value,
                 course_program: document.getElementById('prof-program').value,
                 enrollment_status: document.getElementById('prof-enrollment-status').value,
-                enrollment_type: document.getElementById('prof-enrollment-type').value,
+
                 current_password: currentPassword,
                 new_password: newPassword
             };
@@ -2406,7 +2433,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     const sidebarAvatar = document.querySelector('.pl-avatar');
                     if (sidebarName) sidebarName.textContent = name;
                     if (sidebarAvatar) sidebarAvatar.textContent = name.trim().charAt(0).toUpperCase();
-                    
+
                     document.getElementById('prof-current-password').value = '';
                     document.getElementById('prof-new-password').value = '';
                     document.getElementById('prof-confirm-password').value = '';

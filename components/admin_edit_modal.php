@@ -88,11 +88,16 @@
                     </div>
                     <div class="form-group" style="flex: 1.5;">
                         <label>Assigned Instructor</label>
-                        <select id="admin-app-facilitator" class="form-control">
+                        <select id="admin-app-facilitator" class="form-control" onchange="handleFacilitatorChange()">
                             <option value="0">To Be Assigned</option>
                             <!-- Populated via JS -->
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group" id="admin-outside-fac-group" style="display: none; margin-bottom: 1rem;">
+                    <label>Outside Facilitator Name</label>
+                    <input type="text" id="admin-outside-facilitator" class="form-control" placeholder="Enter facilitator name...">
                 </div>
 
                 <div class="form-group">
@@ -253,6 +258,14 @@
         });
     };
 
+    window.handleFacilitatorChange = function() {
+        const facSelect = document.getElementById('admin-app-facilitator');
+        const outsideGroup = document.getElementById('admin-outside-fac-group');
+        if (facSelect && outsideGroup) {
+            outsideGroup.style.display = facSelect.value === 'other' ? 'block' : 'none';
+        }
+    };
+
     window.editAppointment = async function (id, status, venue, currentFacId, cancelledDateTime, cancelledBy, cancellationReason, summaryData = {}) {
         document.getElementById('admin-app-id').value = id;
         document.getElementById('admin-app-status').value = status;
@@ -280,7 +293,16 @@
 
         // Load facilitators into dropdown
         const facSelect = document.getElementById('admin-app-facilitator');
+        const outsideFacInput = document.getElementById('admin-outside-facilitator');
+        const outsideGroup = document.getElementById('admin-outside-fac-group');
+        
         facSelect.innerHTML = '<option value="0">To Be Assigned</option>';
+        if (summaryData.type === 'Seminar') {
+            facSelect.innerHTML += `<option value="other" ${summaryData.outside_facilitator ? 'selected' : ''}>Other Facilitators</option>`;
+        }
+        
+        if (outsideFacInput) outsideFacInput.value = summaryData.outside_facilitator || '';
+        if (outsideGroup) outsideGroup.style.display = (summaryData.outside_facilitator || facSelect.value === 'other') ? 'block' : 'none';
 
         const cancelledByText = String(cancelledBy || '').trim();
         const cancelledByAdmin = cancelledByText !== '' && /admin/i.test(cancelledByText);
@@ -480,7 +502,8 @@
             id: id,
             status: status,
             venue: venue,
-            facilitator_id: facilitator_id,
+            facilitator_id: facilitator_id === 'other' ? null : facilitator_id,
+            outside_facilitator: facilitator_id === 'other' ? document.getElementById('admin-outside-facilitator').value : null,
             cancellation_reason: ['CANCELLED', 'DECLINED'].includes(normalizedStatus) ? reason : null,
             cancelled_by: ['CANCELLED', 'DECLINED'].includes(normalizedStatus) ? 'Admin' : null,
             evaluation_notes: normalizedStatus === 'COMPLETED' ? reason : (normalizedStatus === 'CONFIRMED' ? reason : null)

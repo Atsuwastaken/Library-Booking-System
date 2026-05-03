@@ -11,6 +11,13 @@ class BookingService
         $this->db = (new Database())->getPdo();
     }
 
+    public function getSessionById($id)
+    {
+        $stmt = $this->db->prepare("SELECT * FROM sessions WHERE id = ? LIMIT 1");
+        $stmt->execute([(int) $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
 
     public function getTopics($departmentId = null)
     {
@@ -581,7 +588,7 @@ class BookingService
     {
         $sql = "
                  SELECT s.id as session_id, s.type as appointment_type, s.topic, s.date_time, s.end_time, s.mode, s.venue,
-                   s.status as booking_status, s.special_requests,
+                   s.status as booking_status, s.special_requests, s.outside_facilitator,
                      s.requester_name, s.requester_email, s.requester_department_id,
                      rd.name as requester_department,
                    s.cancellation_reason, s.cancelled_date_time, s.cancelled_by, s.evaluation_notes, s.archived_at,
@@ -652,7 +659,7 @@ class BookingService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function updateAppointment($sessionId, $status, $venue, $facilitatorId, $cancellationReason = null, $cancelledBy = null, $evaluationNotes = null)
+    public function updateAppointment($sessionId, $status, $venue, $facilitatorId, $cancellationReason = null, $cancelledBy = null, $evaluationNotes = null, $outsideFacilitator = null)
     {
         $this->db->beginTransaction();
         try {
@@ -682,8 +689,8 @@ class BookingService
                 }
             }
 
-            $stmt = $this->db->prepare("UPDATE sessions SET status = ?, venue = ?, facilitator_id = ?, cancellation_reason = ?, cancelled_date_time = ?, cancelled_by = ?, evaluation_notes = ? WHERE id = ?");
-            $stmt->execute([$normalizedStatus, $venue, $facId, ($reasonToSave !== '' ? $reasonToSave : null), $cancelledAt, $cancelledByValue, ($notesToSave !== '' ? $notesToSave : null), $sessionId]);
+            $stmt = $this->db->prepare("UPDATE sessions SET status = ?, venue = ?, facilitator_id = ?, outside_facilitator = ?, cancellation_reason = ?, cancelled_date_time = ?, cancelled_by = ?, evaluation_notes = ? WHERE id = ?");
+            $stmt->execute([$normalizedStatus, $venue, $facId, $outsideFacilitator, ($reasonToSave !== '' ? $reasonToSave : null), $cancelledAt, $cancelledByValue, ($notesToSave !== '' ? $notesToSave : null), $sessionId]);
             $hasChanges = $stmt->rowCount() > 0;
             if ($hasChanges) {
                 $this->logSessionEvent((int) $sessionId, 'modified');
@@ -798,9 +805,29 @@ class BookingService
         return $success;
     }
 
-    public function changeInstructorToTba($sessionId, $facilitatorId = null)
+    public function changeInstructor($sessionId, $facilitatorId = null)
     {
-        $facId = ($facilitatorId && $facilitatorId !== 'null' && $facilitatorId !== '0') ? $facilitatorId : null;
+        $facId = ($facilitatorId && $facilitatorId !== 'null' && $facilitatorId !== '0') ? (int) $facilitatorId : null;
+        
+        if ($facId) {
+            // Check for conflicts
+            $session = $this->getSessionById($sessionId);
+            if (!$session) throw new Exception("Session not found.");
+
+            $stmt = $this->db->prepare("SELECT id FROM sessions 
+                                       WHERE facilitator_id = ? 
+                                       AND status = 'CONFIRMED' 
+                                       AND id != ? 
+                                       AND SUBSTR(date_time, 1, 10) = SUBSTR(?, 1, 10)
+                                       AND (
+                                           (date_time < ? AND end_time > ?)
+                                       )");
+            $stmt->execute([$facId, $sessionId, $session['date_time'], $session['end_time'], $session['date_time']]);
+            if ($stmt->fetch()) {
+                throw new Exception("The selected instructor is already booked for this time slot.");
+            }
+        }
+
         $stmt = $this->db->prepare("UPDATE sessions SET status = 'PENDING', facilitator_id = ? WHERE id = ?");
         $success = $stmt->execute([$facId, $sessionId]);
         if ($success && $stmt->rowCount() > 0) {
@@ -814,7 +841,7 @@ class BookingService
         $stmt = $this->db->prepare("SELECT s.id AS session_id,
                                    s.topic,
                                    s.status,
-                                   f.name AS facilitator_name,
+                                   COALESCE(s.outside_facilitator, f.name, '') AS facilitator_name,
                                    COALESCE(u.name, s.requester_name, '') AS user_name,
                                    COALESCE(u.email, s.requester_email, '') AS requester_email,
                                    COALESCE(d.name, rd.name, '') AS college_name
@@ -835,17 +862,22 @@ class BookingService
             return;
         }
 
+        $fmt = function($val, $default = 'N/A') {
+            $v = trim((string)($val ?? ''));
+            return $v !== '' ? $v : $default;
+        };
+
         $stmt = $this->db->prepare('INSERT INTO session_logs (session_id, facilitator, user, requester_email, college, topic, action, log_date, session_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt->execute([
             $details['session_id'] ?? null,
-            $details['facilitator_name'] ?? '',
-            $details['user_name'] ?? '',
-            $details['requester_email'] ?? '',
-            $details['college_name'] ?? '',
-            $details['topic'] ?? '',
+            $fmt($details['facilitator_name'] ?? '', 'TBA'),
+            $fmt($details['user_name'] ?? ''),
+            $fmt($details['requester_email'] ?? ''),
+            $fmt($details['college_name'] ?? ''),
+            $fmt($details['topic'] ?? ''),
             $action,
             date('Y-m-d H:i:s'),
-            $details['status'] ?? ''
+            $fmt($details['status'] ?? '')
         ]);
     }
 
@@ -860,14 +892,9 @@ class BookingService
 
     public function getSessionLogsSince($fromDateTime)
     {
-        $sql = "SELECT sl.*, s.topic, f.name as facilitator, u.name as user, u.email as requester_email, d.name as college, s.status as session_status
-                FROM session_logs sl
-                JOIN sessions s ON sl.session_id = s.id
-                LEFT JOIN facilitators f ON s.facilitator_id = f.id
-                LEFT JOIN users u ON s.user_id = u.id
-                LEFT JOIN department d ON u.department_id = d.id
-                WHERE sl.log_date >= ?
-                ORDER BY sl.log_date DESC";
+        $sql = "SELECT * FROM session_logs
+                WHERE log_date >= ?
+                ORDER BY log_date DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$fromDateTime]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1032,22 +1059,20 @@ class BookingService
 
     public function authenticateUser($email, $password)
     {
-        $stmt = $this->db->prepare("SELECT id, name, email, role, facilitator_id FROM users WHERE email = ? LIMIT 1");
-        $stmt->execute([$email]);
+        $normalizedEmail = strtolower(trim((string) $email));
+        $stmt = $this->db->prepare("SELECT id, name, email, password, role, facilitator_id FROM users WHERE LOWER(email) = ? LIMIT 1");
+        $stmt->execute([$normalizedEmail]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$user) {
             return null;
         }
 
-        $passwordStmt = $this->db->prepare("SELECT password FROM users WHERE id = ?");
-        $passwordStmt->execute([$user['id']]);
-        $storedPassword = $passwordStmt->fetchColumn();
-
-        if (!password_verify($password, $storedPassword)) {
+        if (!password_verify($password, $user['password'])) {
             return null;
         }
 
+        unset($user['password']); // Don't return hashed password
         return $user;
     }
 
@@ -1198,7 +1223,7 @@ class BookingService
                 trim((string) ($request['name'] ?? '')),
                 $normalizedEmail,
                 $roleToSave,
-                password_hash((string) ($request['password'] ?? ''), PASSWORD_DEFAULT),
+                (string) ($request['password'] ?? ''),
                 $deptToSave,
                 null,
                 $userType ?: ($request['user_type'] ?? 'non-student'),

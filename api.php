@@ -41,6 +41,12 @@ function requireAuthenticatedUserId()
     return (int) $userId;
 }
 
+function isAdmin()
+{
+    $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+    return $role === 'admin';
+}
+
 function requireAdminSession()
 {
     $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
@@ -67,17 +73,19 @@ if ($action === 'export_session_logs_csv') {
     header('Pragma: no-cache');
 
     $out = fopen('php://output', 'w');
-    fputcsv($out, ['Log ID', 'Session ID', 'Facilitator', 'User', 'Requester Email', 'College', 'Topic', 'Action', 'Log Date', 'Session Status']);
+    fputcsv($out, ['Log ID', 'Session ID', 'Facilitator', 'User', 'Requester Email', 'Action', 'Log Date', 'Session Status']);
 
     foreach ($logs as $row) {
+        $fac = trim((string) ($row['facilitator'] ?? ''));
+        $usr = trim((string) ($row['user'] ?? ''));
+        $eml = trim((string) ($row['requester_email'] ?? ''));
+
         fputcsv($out, [
             $row['id'] ?? '',
             $row['session_id'] ?? '',
-            $row['facilitator'] ?? '',
-            $row['user'] ?? '',
-            $row['requester_email'] ?? '',
-            $row['college'] ?? '',
-            $row['topic'] ?? '',
+            ($fac !== '' ? $fac : 'TBA'),
+            ($usr !== '' ? $usr : 'TBA'),
+            ($eml !== '' ? $eml : 'TBA'),
             $row['action'] ?? '',
             $row['log_date'] ?? '',
             $row['session_status'] ?? ''
@@ -116,26 +124,31 @@ if ($action === 'export_sessions_csv') {
         'Special Requests',
         'Cancellation Reason'
     ]);
+    $fmt = function($val, $default = 'N/A') {
+        $v = trim((string)($val ?? ''));
+        return $v !== '' ? $v : $default;
+    };
+
     foreach ($sessions as $row) {
         fputcsv($out, [
             $row['session_id'] ?? '',
-            $row['appointment_type'] ?? '',
-            $row['topic'] ?? '',
-            $row['date_time'] ?? '',
-            $row['end_time'] ?? '',
-            $row['mode'] ?? '',
-            $row['venue'] ?? '',
-            $row['booking_status'] ?? '',
-            $row['student_name'] ?? '',
-            $row['student_email'] ?? '',
-            $row['student_number'] ?? '',
-            $row['year_level'] ?? '',
-            $row['program_name'] ?? '',
-            $row['student_department'] ?? '',
-            $row['enrollment_status'] ?? '',
-            $row['facilitator_name'] ?? '',
-            $row['special_requests'] ?? '',
-            $row['cancellation_reason'] ?? ''
+            $fmt($row['appointment_type'] ?? ''),
+            $fmt($row['topic'] ?? ''),
+            $fmt($row['date_time'] ?? ''),
+            $fmt($row['end_time'] ?? ''),
+            $fmt($row['mode'] ?? ''),
+            $fmt($row['venue'] ?? '', 'TBA'),
+            $fmt($row['booking_status'] ?? ''),
+            $fmt($row['student_name'] ?? ''),
+            $fmt($row['student_email'] ?? ''),
+            $fmt($row['student_number'] ?? ''),
+            $fmt($row['year_level'] ?? ''),
+            $fmt($row['program_name'] ?? ''),
+            $fmt($row['student_department'] ?? ''),
+            $fmt($row['enrollment_status'] ?? ''),
+            $fmt($row['facilitator_name'] ?? '', 'TBA'),
+            $fmt($row['special_requests'] ?? '', 'None'),
+            $fmt($row['cancellation_reason'] ?? '', 'N/A')
         ]);
     }
     fclose($out);
@@ -663,13 +676,14 @@ if ($action === 'update_appointment') {
     $cancellationReason = $data['cancellation_reason'] ?? null;
     $cancelledBy = $data['cancelled_by'] ?? null;
     $evaluationNotes = $data['evaluation_notes'] ?? null;
+    $outsideFacilitator = $data['outside_facilitator'] ?? null;
 
     if ($status === 'DECLINED') {
         requireAuthenticatedUserId();
         requireAdminSession();
     }
 
-    $result = $service->updateAppointment($id, $status, $venue, $facId, $cancellationReason, $cancelledBy, $evaluationNotes);
+    $result = $service->updateAppointment($id, $status, $venue, $facId, $cancellationReason, $cancelledBy, $evaluationNotes, $outsideFacilitator);
     if ($result === true) {
         echo json_encode(['success' => true]);
     } else {
@@ -691,13 +705,26 @@ if ($action === 'cancel_appointment') {
 }
 
 if ($action === 'change_instructor') {
-    requireAuthenticatedUserId();
-    requireAdminSession();
+    $userId = requireAuthenticatedUserId();
     $data = json_decode(file_get_contents('php://input'), true);
     $id = $data['id'] ?? 0;
     $facilitatorId = $data['facilitator_id'] ?? null;
-    $success = $service->changeInstructorToTba($id, $facilitatorId);
-    echo json_encode(['success' => $success]);
+
+    // Optional: check ownership if not admin
+    if (!isAdmin()) {
+        $session = $service->getSessionById($id);
+        if (!$session || $session['user_id'] != $userId) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+    }
+
+    try {
+        $success = $service->changeInstructor($id, $facilitatorId);
+        echo json_encode(['success' => $success]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
     exit;
 }
 

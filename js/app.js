@@ -69,163 +69,229 @@ document.addEventListener('DOMContentLoaded', () => {
             userSidebar.classList.toggle('active');
         });
 
-        function openCancellationReasonModal({
-            title = 'Cancel Appointment',
-            message = 'You may optionally provide a reason before confirming cancellation.',
-            confirmText = 'Confirm Cancellation',
-            cancelText = 'Keep Appointment',
-            reasonLabel = 'Cancellation reason (optional)',
-            reasonPlaceholder = 'Type a reason, or leave blank to continue...'
-        } = {}) {
-            const modal = document.getElementById('cancel-reason-modal');
-            const titleEl = document.getElementById('cancel-reason-title');
-            const messageEl = document.getElementById('cancel-reason-message');
-            const reasonLabelEl = document.getElementById('cancel-reason-label');
-            const reasonEl = document.getElementById('cancel-reason-input');
-            const closeBtn = document.getElementById('cancel-reason-close');
-            const confirmBtn = document.getElementById('cancel-reason-confirm');
 
-            // If modal is unavailable, safely abort instead of using native browser dialogs.
-            if (!modal || !reasonEl || !closeBtn || !confirmBtn) {
-                console.warn('Cancellation modal is not available in DOM.');
-                return Promise.resolve(null);
-            }
-
-            if (titleEl) titleEl.textContent = title;
-            if (messageEl) messageEl.textContent = message;
-            if (reasonLabelEl) reasonLabelEl.textContent = reasonLabel;
-            closeBtn.textContent = cancelText;
-            confirmBtn.textContent = confirmText;
-            reasonEl.value = '';
-            reasonEl.placeholder = reasonPlaceholder;
-
-            return new Promise(resolve => {
-                const onConfirm = () => {
-                    const val = reasonEl.value.trim();
-                    cleanup();
-                    resolve(val);
-                };
-
-                const onClose = () => {
-                    cleanup();
-                    resolve(null);
-                };
-
-                const onBackdrop = (e) => {
-                    if (e.target === modal) onClose();
-                };
-
-                const onEsc = (e) => {
-                    if (e.key === 'Escape') onClose();
-                };
-
-                function cleanup() {
-                    modal.classList.remove('active');
-                    confirmBtn.removeEventListener('click', onConfirm);
-                    closeBtn.removeEventListener('click', onClose);
-                    modal.removeEventListener('click', onBackdrop);
-                    document.removeEventListener('keydown', onEsc);
-                }
-
-                confirmBtn.addEventListener('click', onConfirm);
-                closeBtn.addEventListener('click', onClose);
-                modal.addEventListener('click', onBackdrop);
-                document.addEventListener('keydown', onEsc);
-                modal.classList.add('active');
-                reasonEl.focus();
-            });
-        }
-
-        function openChangeInstructorModal(facilitators = [], currentFacilitatorId = null) {
-            const modal = document.getElementById('change-instructor-modal');
-            const listEl = document.getElementById('change-instructor-list');
-            const closeBtn = document.getElementById('change-instructor-close');
-            const confirmBtn = document.getElementById('change-instructor-confirm');
-            let selectedFacilitatorId = null;
-
-            if (!modal || !listEl || !closeBtn || !confirmBtn) {
-                console.warn('Change instructor modal is not available in DOM.');
-                return Promise.resolve(null);
-            }
-
-            listEl.innerHTML = '';
-            if (!facilitators.length) {
-                listEl.innerHTML = '<div class="loader-container">No available facilitators for this topic.</div>';
-            } else {
-                facilitators.forEach(f => {
-                    const card = document.createElement('div');
-                    card.className = 'fac-card-new';
-                    card.innerHTML = `
-                <div class="fac-avatar-new">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                </div>
-                <div class="fac-info-new">
-                    <h5>${f.name}</h5>
-                    <p>${f.position || 'Library Faculty'}</p>
-                </div>
-            `;
-
-                    card.addEventListener('click', () => {
-                        listEl.querySelectorAll('.fac-card-new').forEach(c => c.classList.remove('selected'));
-                        card.classList.add('selected');
-                        selectedFacilitatorId = String(f.id);
-                    });
-
-                    if (currentFacilitatorId && String(f.id) === String(currentFacilitatorId)) {
-                        card.classList.add('selected');
-                        selectedFacilitatorId = String(f.id);
-                    }
-
-                    listEl.appendChild(card);
-                });
-            }
-
-            return new Promise(resolve => {
-                const onConfirm = () => {
-                    if (!selectedFacilitatorId) {
-                        alert('Please select an instructor first.');
-                        return;
-                    }
-                    cleanup();
-                    resolve(selectedFacilitatorId);
-                };
-
-                const onClose = () => {
-                    cleanup();
-                    resolve(null);
-                };
-
-                const onBackdrop = (e) => {
-                    if (e.target === modal) onClose();
-                };
-
-                const onEsc = (e) => {
-                    if (e.key === 'Escape') onClose();
-                };
-
-                function cleanup() {
-                    modal.classList.remove('active');
-                    confirmBtn.removeEventListener('click', onConfirm);
-                    closeBtn.removeEventListener('click', onClose);
-                    modal.removeEventListener('click', onBackdrop);
-                    document.removeEventListener('keydown', onEsc);
-                }
-
-                confirmBtn.addEventListener('click', onConfirm);
-                closeBtn.addEventListener('click', onClose);
-                modal.addEventListener('click', onBackdrop);
-                document.addEventListener('keydown', onEsc);
-                modal.classList.add('active');
-                if (listEl.firstElementChild && listEl.firstElementChild.classList.contains('fac-card-new')) {
-                    listEl.firstElementChild.focus?.();
-                }
-            });
-        }
 
         document.addEventListener('click', (e) => {
             if (userSidebar.classList.contains('active') && !userSidebar.contains(e.target) && e.target !== avatarBtn && !avatarBtn.contains(e.target)) {
                 userSidebar.classList.remove('active');
             }
+        });
+    }
+
+    function openCancellationReasonModal({
+        title = 'Cancel Appointment',
+        message = 'You may optionally provide a reason before confirming cancellation.',
+        confirmText = 'Confirm Cancellation',
+        cancelText = 'Keep Appointment',
+        reasonLabel = 'Cancellation reason (optional)',
+        reasonPlaceholder = 'Type a reason, or leave blank to continue...'
+    } = {}) {
+        const modal = document.getElementById('cancel-reason-modal');
+        const titleEl = document.getElementById('cancel-reason-title');
+        const messageEl = document.getElementById('cancel-reason-message');
+        const reasonLabelEl = document.getElementById('cancel-reason-label');
+        const reasonEl = document.getElementById('cancel-reason-input');
+        const closeBtn = document.getElementById('cancel-reason-close');
+        const confirmBtn = document.getElementById('cancel-reason-confirm');
+
+        // If modal is unavailable, safely abort instead of using native browser dialogs.
+        if (!modal || !reasonEl || !closeBtn || !confirmBtn) {
+            console.warn('Cancellation modal is not available in DOM.');
+            return Promise.resolve(null);
+        }
+
+        if (titleEl) titleEl.textContent = title;
+        if (messageEl) messageEl.textContent = message;
+        if (reasonLabelEl) reasonLabelEl.textContent = reasonLabel;
+        closeBtn.textContent = cancelText;
+        confirmBtn.textContent = confirmText;
+        reasonEl.value = '';
+        reasonEl.placeholder = reasonPlaceholder;
+
+        return new Promise(resolve => {
+            const onConfirm = () => {
+                const val = reasonEl.value.trim();
+                cleanup();
+                resolve(val);
+            };
+
+            const onClose = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            const onBackdrop = (e) => {
+                if (e.target === modal) onClose();
+            };
+
+            const onEsc = (e) => {
+                if (e.key === 'Escape') onClose();
+            };
+
+            function cleanup() {
+                modal.classList.remove('active');
+                confirmBtn.removeEventListener('click', onConfirm);
+                closeBtn.removeEventListener('click', onClose);
+                modal.removeEventListener('click', onBackdrop);
+                document.removeEventListener('keydown', onEsc);
+            }
+
+            confirmBtn.addEventListener('click', onConfirm);
+            closeBtn.addEventListener('click', onClose);
+            modal.addEventListener('click', onBackdrop);
+            document.addEventListener('keydown', onEsc);
+            modal.classList.add('active');
+            reasonEl.focus();
+        });
+    }
+
+    function openChangeInstructorModal(facilitators = [], currentFacilitatorId = null, dateTime = null, endTime = null, currentBookingId = null) {
+        const modal = document.getElementById('change-instructor-modal');
+        const selectEl = document.getElementById('change-instructor-select');
+        const closeBtn = document.getElementById('change-instructor-close');
+        const confirmBtn = document.getElementById('change-instructor-confirm');
+        const errorEl = document.getElementById('change-instructor-error');
+        const axisZones = document.getElementById('change-axis-zones');
+
+        if (!modal || !selectEl || !closeBtn || !confirmBtn) {
+            console.warn('Change instructor modal is not available in DOM.');
+            return Promise.resolve(null);
+        }
+
+        // Populate Select
+        selectEl.innerHTML = '<option value="" disabled selected>Choose an instructor...</option>';
+        facilitators.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = f.name;
+            if (currentFacilitatorId && String(f.id) === String(currentFacilitatorId)) {
+                opt.selected = true;
+            }
+            selectEl.appendChild(opt);
+        });
+
+        const dateStr = dateTime ? dateTime.split(' ')[0] : '';
+
+        const renderAxis = () => {
+            if (!axisZones) return;
+            axisZones.innerHTML = '';
+            const startH = 9;
+            const totalH = 11;
+
+            const addZone = (s, e, className) => {
+                if (e <= startH || s >= startH + totalH) return;
+                const left = Math.max(0, ((s - startH) / totalH) * 100);
+                const width = Math.min(100 - left, ((e - s) / totalH) * 100);
+                if (width <= 0) return;
+                const zone = document.createElement('div');
+                zone.className = `axis-zone ${className}`;
+                zone.style.left = `${left}%`;
+                zone.style.width = `${width}%`;
+                axisZones.appendChild(zone);
+            };
+
+            // 1. Instructor Bookings
+            const fid = selectEl.value;
+            if (fid && fid !== 'null') {
+                const bookings = allSessions.filter(s =>
+                    s.facilitator_id == fid &&
+                    s.date_time.startsWith(dateStr) &&
+                    String(s.booking_status).toUpperCase() === 'CONFIRMED' &&
+                    s.session_id != currentBookingId
+                );
+                bookings.forEach(b => {
+                    const bDate = new Date(b.date_time.replace(/-/g, '/'));
+                    const sH = bDate.getHours() + (bDate.getMinutes() / 60);
+                    let eH = sH + 1;
+                    if (b.end_time) {
+                        const eDate = new Date(b.end_time.replace(/-/g, '/'));
+                        eH = eDate.getHours() + (eDate.getMinutes() / 60);
+                    }
+                    addZone(sH, eH, 'zone-booked');
+                });
+            }
+
+            // 2. Current Session Selection
+            if (dateTime && endTime) {
+                const sDate = new Date(dateTime.replace(/-/g, '/'));
+                const eDate = new Date(endTime.replace(/-/g, '/'));
+                const sH = sDate.getHours() + (sDate.getMinutes() / 60);
+                const eH = eDate.getHours() + (eDate.getMinutes() / 60);
+                addZone(sH, eH, 'zone-selected');
+            }
+        };
+
+        const validate = () => {
+            const fid = selectEl.value;
+            if (!fid || fid === 'null') return false;
+
+            const sDate = new Date(dateTime.replace(/-/g, '/'));
+            const eDate = new Date(endTime.replace(/-/g, '/'));
+            const startMins = sDate.getHours() * 60 + sDate.getMinutes();
+            const endMins = eDate.getHours() * 60 + eDate.getMinutes();
+
+            const conflict = allSessions.find(s => {
+                if (s.facilitator_id != fid || String(s.booking_status).toUpperCase() !== 'CONFIRMED') return false;
+                if (!s.date_time.startsWith(dateStr)) return false;
+                if (s.session_id == currentBookingId) return false;
+
+                const sTimeStr = s.date_time.split(' ')[1];
+                const eTimeStr = s.end_time ? s.end_time.split(' ')[1] : null;
+                if (!sTimeStr || !eTimeStr) return false;
+
+                const [sh, sm] = sTimeStr.split(':').map(Number);
+                const [eh, em] = eTimeStr.split(':').map(Number);
+                const sMins = sh * 60 + sm;
+                const eMins = eh * 60 + em;
+
+                return (startMins < eMins && endMins > sMins);
+            });
+
+            if (conflict) {
+                errorEl.textContent = 'This instructor has a schedule conflict at this time.';
+                errorEl.style.display = 'block';
+                return false;
+            }
+            errorEl.style.display = 'none';
+            return true;
+        };
+
+        const onSelectChange = () => {
+            renderAxis();
+            validate();
+        };
+        selectEl.addEventListener('change', onSelectChange);
+        renderAxis();
+        validate();
+
+        return new Promise(resolve => {
+            const onConfirm = () => {
+                if (!selectEl.value) {
+                    alert('Please select an instructor.');
+                    return;
+                }
+                if (!validate()) return;
+                cleanup();
+                resolve(selectEl.value);
+            };
+            const onClose = () => { cleanup(); resolve(null); };
+            const onBackdrop = (e) => { if (e.target === modal) onClose(); };
+            const onEsc = (e) => { if (e.key === 'Escape') onClose(); };
+
+            function cleanup() {
+                modal.classList.remove('active');
+                confirmBtn.removeEventListener('click', onConfirm);
+                closeBtn.removeEventListener('click', onClose);
+                modal.removeEventListener('click', onBackdrop);
+                document.removeEventListener('keydown', onEsc);
+                selectEl.removeEventListener('change', onSelectChange);
+            }
+
+            confirmBtn.addEventListener('click', onConfirm);
+            closeBtn.addEventListener('click', onClose);
+            modal.addEventListener('click', onBackdrop);
+            document.addEventListener('keydown', onEsc);
+            modal.classList.add('active');
         });
     }
 
@@ -1958,10 +2024,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="form-group">
                             <label>Facilitator</label>
-                            <select id="fac-${app.session_id}" class="login-input" ${lockedByStudentCancellation ? 'disabled' : ''}>
+                            <select id="fac-${app.session_id}" class="login-input" ${lockedByStudentCancellation ? 'disabled' : ''} onchange="toggleOutsideFacilitator(${app.session_id})">
                                 <option value="null">TBA</option>
                                 ${(allFacilitators || []).map(f => `<option value="${f.id}" ${app.facilitator_id == f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+                                ${app.appointment_type === 'Seminar' ? `<option value="other" ${app.outside_facilitator ? 'selected' : ''}>Other Facilitators</option>` : ''}
                             </select>
+                        </div>
+                        <div id="outside-fac-group-${app.session_id}" class="form-group" style="display: ${app.outside_facilitator || (app.appointment_type === 'Seminar' && document.getElementById(`fac-${app.session_id}`)?.value === 'other') ? 'block' : 'none'}; margin-top: 0.5rem;">
+                            <label>Outside Facilitator Name</label>
+                            <input type="text" id="outside-fac-${app.session_id}" class="login-input" value="${app.outside_facilitator || ''}" placeholder="Enter name...">
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="saveAppointmentAdmin(${app.session_id})" style="width: 100%; margin-top: 0.5rem; ${lockedByStudentCancellation ? 'opacity: 0.6; cursor: not-allowed;' : ''}" ${lockedByStudentCancellation ? 'disabled' : ''}>Save Changes</button>
                     </div>
@@ -1969,7 +2040,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 html += `
                     <p style="margin-bottom: 0.5rem"><strong>Venue:</strong> ${app.venue || 'TBA'}</p>
-                    <p style="margin-bottom: 0.5rem"><strong>Instructor:</strong> ${app.facilitator_name || 'TBA'}</p>
+                    <p style="margin-bottom: 0.5rem"><strong>Instructor:</strong> ${app.outside_facilitator || app.facilitator_name || 'TBA'}</p>
                     ${normalizedStatus === 'COMPLETED' ? `
                         <div style="margin-top: 1rem; padding: 0.75rem; background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 4px;">
                             <p style="margin: 0 0 0.5rem 0; color: #22c55e; font-weight: 600;">✓ Completed</p>
@@ -1986,7 +2057,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ` : ''}
                     <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                         ${!isClosed && normalizedStatus !== 'COMPLETED' ? `<button class="btn btn-outline btn-sm" onclick="cancelAppointmentUser(${app.session_id})" style="color: var(--danger); border-color: var(--danger);">Cancel</button>` : ''}
-                        ${app.appointment_type === 'Instructional Program' && app.facilitator_id && !isClosed && normalizedStatus !== 'COMPLETED' ? `<button class="btn btn-muted btn-sm" onclick="changeInstructor(${app.session_id}, '${String(app.topic || '').replace(/'/g, "\\'")}', ${app.facilitator_id || 'null'})">Change Instructor</button>` : ''}
+                        ${app.appointment_type === 'Instructional Program' && app.facilitator_id && !isClosed && normalizedStatus !== 'COMPLETED' ? `<button class="btn btn-muted btn-sm" onclick="changeInstructor(${app.session_id}, '${String(app.topic || '').replace(/'/g, "\\'")}', ${app.facilitator_id || 'null'}, '${app.date_time}', '${app.end_time}')">Change Instructor</button>` : ''}
                     </div>
                 `;
             }
@@ -2003,7 +2074,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const st = document.getElementById(`status-${bookingId}`).value;
         const vn = document.getElementById(`venue-${bookingId}`).value;
-        const fc = document.getElementById(`fac-${bookingId}`).value;
+        const facSelect = document.getElementById(`fac-${bookingId}`);
+        const fc = facSelect.value;
+        const outsideFac = fc === 'other' ? document.getElementById(`outside-fac-${bookingId}`).value : null;
         let cancellationReason = null;
         let cancelledBy = null;
         let evaluationNotes = null;
@@ -2037,7 +2110,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('api.php?action=update_appointment', {
                 method: 'POST',
-                body: JSON.stringify({ id: bookingId, status: st, venue: vn, facilitator_id: fc, cancellation_reason: cancellationReason, cancelled_by: cancelledBy, evaluation_notes: evaluationNotes })
+                body: JSON.stringify({ 
+                    id: bookingId, 
+                    status: st, 
+                    venue: vn, 
+                    facilitator_id: (fc === 'other' ? null : fc), 
+                    outside_facilitator: outsideFac,
+                    cancellation_reason: cancellationReason, 
+                    cancelled_by: cancelledBy, 
+                    evaluation_notes: evaluationNotes 
+                })
             });
             const data = await res.json();
             if (data.success) {
@@ -2047,6 +2129,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (e) {
             console.error(e);
+        }
+    };
+
+    window.toggleOutsideFacilitator = (id) => {
+        const select = document.getElementById(`fac-${id}`);
+        const group = document.getElementById(`outside-fac-group-${id}`);
+        if (select && group) {
+            group.style.display = select.value === 'other' ? 'block' : 'none';
         }
     };
 
@@ -2074,7 +2164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { }
     };
 
-    window.changeInstructor = async (bookingId, topicName, currentFacilitatorId = null) => {
+    window.changeInstructor = async (bookingId, topicName, currentFacilitatorId = null, dateTime = null, endTime = null) => {
         let topicId = null;
 
         try {
@@ -2111,8 +2201,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const selectedFacilitatorId = await openChangeInstructorModal(facilitators, currentFacilitatorId);
-        if (!selectedFacilitatorId) return;
+        const selectedFacilitatorId = await openChangeInstructorModal(facilitators, currentFacilitatorId, dateTime, endTime, bookingId);
+        if (!selectedFacilitatorId || String(selectedFacilitatorId) === String(currentFacilitatorId)) return;
 
         try {
             const res = await fetch('api.php?action=change_instructor', {
@@ -2122,8 +2212,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.success) {
                 loadAppointments();
+            } else {
+                alert(data.message || 'Failed to change instructor.');
             }
-        } catch (e) { }
+        } catch (e) {
+            alert('An error occurred while changing the instructor.');
+        }
     };
 
 

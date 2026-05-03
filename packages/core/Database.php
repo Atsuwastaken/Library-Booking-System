@@ -116,6 +116,7 @@ class Database
                 cancelled_date_time TEXT,
                 cancelled_by TEXT,
                 archived_at TEXT,
+                outside_facilitator TEXT,
                 created_date TEXT DEFAULT (datetime('now', 'localtime')),
                 FOREIGN KEY(facilitator_id) REFERENCES facilitators(id),
                 FOREIGN KEY(user_id) REFERENCES users(id)
@@ -238,6 +239,7 @@ class Database
         $this->ensureColumn('sessions', 'archived_at', 'TEXT');
         $this->ensureColumn('sessions', 'created_date', "TEXT");
         $this->ensureColumn('sessions', 'guest_speaker', 'TEXT');
+        $this->ensureColumn('sessions', 'outside_facilitator', 'TEXT');
         $this->ensureColumn('seminars', 'facilitator_id', 'INTEGER');
 
         $this->ensureColumn('users', 'user_type', "TEXT DEFAULT 'non-student'");

@@ -816,7 +816,7 @@ async function loadRequests() {
                             </div>
                             <div class="info-item">
                                 <strong>Instructor</strong>
-                                <span class="info-value">${app.facilitator_name || 'TBA'}</span>
+                                <span class="info-value">${app.outside_facilitator || app.facilitator_name || 'TBA'}</span>
                             </div>
                             <div class="info-item">
                                 <strong>Schedule</strong>
@@ -1180,13 +1180,21 @@ function renderAdminCalendar() {
         if (offDay) cell.classList.add('off-day');
         if (new Date().toISOString().split('T')[0] === dateStr) cell.classList.add('today');
 
+        const counts = dayApps.reduce((acc, app) => {
+            const s = (app.booking_status || 'PENDING').toLowerCase();
+            acc[s] = (acc[s] || 0) + 1;
+            return acc;
+        }, {});
+
         cell.innerHTML = `
             <div class="day-num">${day}</div>
             <div class="day-content">
                 ${offDay ? `<div class="off-day-label">${offDay.description}</div>` : ''}
-                ${dayApps.map(app => `
-                    <div class="calendar-app-tag ${app.booking_status.toLowerCase()}" title="${app.topic}">${app.appointment_type}</div>
-                `).join('')}
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    ${counts.pending ? `<div class="calendar-app-tag pending">${counts.pending} Pending</div>` : ''}
+                    ${counts.confirmed ? `<div class="calendar-app-tag confirmed">${counts.confirmed} Confirmed</div>` : ''}
+                    ${counts.completed ? `<div class="calendar-app-tag completed">${counts.completed} Completed</div>` : ''}
+                </div>
             </div>
         `;
 
@@ -1502,7 +1510,8 @@ window.openAppointmentDetails = function (index) {
         mode: app.mode || '',
         date: new Date(app.date_time).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }),
         time: `${new Date(app.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${app.end_time ? new Date(app.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBA'}`,
-        archived_at: app.archived_at
+        archived_at: app.archived_at,
+        outside_facilitator: app.outside_facilitator
     };
 
     if (typeof editAppointment === 'function') {

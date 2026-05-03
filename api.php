@@ -124,8 +124,8 @@ if ($action === 'export_sessions_csv') {
         'Special Requests',
         'Cancellation Reason'
     ]);
-    $fmt = function($val, $default = 'N/A') {
-        $v = trim((string)($val ?? ''));
+    $fmt = function ($val, $default = 'N/A') {
+        $v = trim((string) ($val ?? ''));
         return $v !== '' ? $v : $default;
     };
 
@@ -224,7 +224,7 @@ if ($action === 'submit_registration') {
     }
 
     try {
-        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'general', null, $userType, $yearLevel, $courseProgram, $enrollmentStatus);
+        $success = $service->submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, 'general', $userType, $yearLevel, $courseProgram, $enrollmentStatus);
         echo json_encode([
             'success' => $success,
             'message' => $success
@@ -768,11 +768,7 @@ if ($action === 'bulk_unarchive_sessions') {
     exit;
 }
 
-if ($action === 'get_seminars') {
-    $seminars = $service->getSeminars();
-    echo json_encode(['success' => true, 'seminars' => $seminars]);
-    exit;
-}
+
 
 if ($action === 'get_off_days') {
     $offDays = $service->getOffDays();
@@ -815,40 +811,7 @@ if ($action === 'delete_off_day') {
     exit;
 }
 
-if ($action === 'add_seminar') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $title = $data['title'] ?? '';
-    $desc = $data['description'] ?? '';
-    $dt = $data['date_time'] ?? '';
-    $speaker = $data['speaker'] ?? '';
-    $venue = $data['venue'] ?? '';
-    $facilitatorId = !empty($data['facilitator_id']) ? (int) $data['facilitator_id'] : null;
-    $success = $service->addSeminar($title, $desc, $dt, $speaker, $venue, $facilitatorId);
-    echo json_encode(['success' => $success]);
-    exit;
-}
 
-if ($action === 'update_seminar') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $id = (int) ($data['id'] ?? 0);
-    $title = $data['title'] ?? '';
-    $desc = $data['description'] ?? '';
-    $dt = $data['date_time'] ?? '';
-    $speaker = $data['speaker'] ?? '';
-    $venue = $data['venue'] ?? '';
-    $facilitatorId = !empty($data['facilitator_id']) ? (int) $data['facilitator_id'] : null;
-    $success = $service->updateSeminar($id, $title, $desc, $dt, $speaker, $venue, $facilitatorId);
-    echo json_encode(['success' => $success]);
-    exit;
-}
-
-if ($action === 'delete_seminar') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $id = $data['id'] ?? 0;
-    $success = $service->deleteSeminar($id);
-    echo json_encode(['success' => $success]);
-    exit;
-}
 
 if ($action === 'get_facilitator_sessions') {
     $facId = $_GET['facilitator_id'] ?? 0;

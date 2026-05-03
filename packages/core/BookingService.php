@@ -808,11 +808,12 @@ class BookingService
     public function changeInstructor($sessionId, $facilitatorId = null)
     {
         $facId = ($facilitatorId && $facilitatorId !== 'null' && $facilitatorId !== '0') ? (int) $facilitatorId : null;
-        
+
         if ($facId) {
             // Check for conflicts
             $session = $this->getSessionById($sessionId);
-            if (!$session) throw new Exception("Session not found.");
+            if (!$session)
+                throw new Exception("Session not found.");
 
             $stmt = $this->db->prepare("SELECT id FROM sessions 
                                        WHERE facilitator_id = ? 
@@ -862,8 +863,8 @@ class BookingService
             return;
         }
 
-        $fmt = function($val, $default = 'N/A') {
-            $v = trim((string)($val ?? ''));
+        $fmt = function ($val, $default = 'N/A') {
+            $v = trim((string) ($val ?? ''));
             return $v !== '' ? $v : $default;
         };
 
@@ -937,12 +938,7 @@ class BookingService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /* Seminar Management */
-    public function getSeminars()
-    {
-        $stmt = $this->db->query("SELECT s.*, f.name as facilitator_name FROM seminars s LEFT JOIN facilitators f ON s.facilitator_id = f.id ORDER BY s.date_time ASC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+
 
     public function getOffDays()
     {
@@ -1026,25 +1022,7 @@ class BookingService
         return false;
     }
 
-    public function addSeminar($title, $desc, $dt, $speaker, $venue, $facilitatorId = null)
-    {
-        $facId = !empty($facilitatorId) ? (int) $facilitatorId : null;
-        $stmt = $this->db->prepare("INSERT INTO seminars (title, description, date_time, speaker, venue, facilitator_id) VALUES (?, ?, ?, ?, ?, ?)");
-        return $stmt->execute([$title, $desc, $dt, $speaker, $venue, $facId]);
-    }
 
-    public function updateSeminar($id, $title, $desc, $dt, $speaker, $venue, $facilitatorId = null)
-    {
-        $facId = !empty($facilitatorId) ? (int) $facilitatorId : null;
-        $stmt = $this->db->prepare("UPDATE seminars SET title = ?, description = ?, date_time = ?, speaker = ?, venue = ?, facilitator_id = ? WHERE id = ?");
-        return $stmt->execute([$title, $desc, $dt, $speaker, $venue, $facId, (int) $id]);
-    }
-
-    public function deleteSeminar($id)
-    {
-        $stmt = $this->db->prepare("DELETE FROM seminars WHERE id = ?");
-        return $stmt->execute([$id]);
-    }
     public function getUserInfo($userId)
     {
         $stmt = $this->db->prepare("SELECT u.id, u.name, u.email, u.student_number, u.role, u.department_id, u.facilitator_id, d.name as department_name,
@@ -1085,7 +1063,7 @@ class BookingService
         return $normalized;
     }
 
-    public function submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, $requestedRole = 'general', $requestedFacilitatorId = null, $userType = 'non-student', $yearLevel = null, $courseProgram = null, $enrollmentStatus = null, $enrollmentType = null)
+    public function submitRegistrationRequest($studentNumber, $name, $email, $password, $departmentId, $requestedRole = 'general', $userType = 'non-student', $yearLevel = null, $courseProgram = null, $enrollmentStatus = null, $enrollmentType = null)
     {
         $normalizedEmail = strtolower(trim((string) $email));
         if ($normalizedEmail === '') {
@@ -1099,11 +1077,10 @@ class BookingService
         }
 
         $roleToStore = $this->normalizeRole($requestedRole);
-        $facilitatorId = !empty($requestedFacilitatorId) ? (int) $requestedFacilitatorId : null;
         $deptId = !empty($departmentId) ? (int) $departmentId : null;
 
-        $stmt = $this->db->prepare("INSERT INTO registration_requests (student_number, name, email, password, department_id, requested_role, requested_facilitator_id, user_type, year_level, course_program, enrollment_status)
-                                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $this->db->prepare("INSERT INTO registration_requests (student_number, name, email, password, department_id, requested_role, user_type, year_level, course_program, enrollment_status)
+                                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         return $stmt->execute([
             trim((string) $studentNumber),
             trim((string) $name),
@@ -1111,7 +1088,6 @@ class BookingService
             password_hash((string) $password, PASSWORD_DEFAULT),
             $deptId,
             $roleToStore,
-            $facilitatorId,
             $userType,
             $yearLevel,
             $courseProgram,
@@ -1121,10 +1097,9 @@ class BookingService
 
     public function getRegistrationRequests($status = null)
     {
-        $sql = "SELECT rr.*, d.name AS department_name, f.name AS facilitator_name, reviewer.name AS reviewed_by_name, p.name AS course_program_name
+        $sql = "SELECT rr.*, d.name AS department_name, reviewer.name AS reviewed_by_name, p.name AS course_program_name
                 FROM registration_requests rr
                 LEFT JOIN department d ON rr.department_id = d.id
-                LEFT JOIN facilitators f ON rr.requested_facilitator_id = f.id
                 LEFT JOIN users reviewer ON rr.reviewed_by = reviewer.id
                 LEFT JOIN programs p ON rr.course_program = p.id";
 
@@ -1239,7 +1214,7 @@ class BookingService
                     $newUserId,
                     $request['name'] ?? '',
                     $deptToSave,
-                    !empty($request['requested_facilitator_id']) ? (int) $request['requested_facilitator_id'] : null
+                    null
                 );
 
                 if ($facilitatorId) {

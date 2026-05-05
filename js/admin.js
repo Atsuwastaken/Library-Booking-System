@@ -764,7 +764,7 @@ async function loadRequests() {
     // Build filter query string
     const filters = {
         requestor: document.getElementById('filter-requestor')?.value || 'all',
-        college: document.getElementById('filter-college')?.value || 'all',
+        department: document.getElementById('filter-department')?.value || 'all',
         facilitator: document.getElementById('filter-facilitator')?.value || 'all',
         status: document.getElementById('filter-status')?.value || 'all',
         datetime: document.getElementById('filter-datetime')?.value || 'newest',
@@ -857,11 +857,11 @@ async function loadRequests() {
 
     // Bind filter handlers (prevent double-binding)
     if (!window.requestFilterHandlersBound) {
-        ['filter-requestor', 'filter-college', 'filter-facilitator', 'filter-status', 'filter-datetime', 'filter-date'].forEach(id => {
+        ['filter-requestor', 'filter-department', 'filter-facilitator', 'filter-status', 'filter-datetime', 'filter-date'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', () => loadRequests());
         });
         document.getElementById('reset-request-filters')?.addEventListener('click', () => {
-            ['filter-requestor', 'filter-college', 'filter-facilitator', 'filter-status', 'filter-date'].forEach(id => {
+            ['filter-requestor', 'filter-department', 'filter-facilitator', 'filter-status', 'filter-date'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = (id === 'filter-date' ? '' : 'all');
             });
@@ -964,7 +964,7 @@ async function loadFilterOptions() {
         const usersData = await usersRes.json();
 
         if (deptsData.success) {
-            const select = document.getElementById('filter-college');
+            const select = document.getElementById('filter-department');
             if (select) {
                 deptsData.departments.forEach(d => {
                     const opt = document.createElement('option');

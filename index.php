@@ -322,7 +322,7 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
                                         <input type="email" id="prof-email" name="email" required>
                                     </div>
                                     <div class="field">
-                                        <label>Department / College</label>
+                                        <label>Department</label>
                                         <select id="prof-department" name="department_id" required>
                                             <option value="">Select department</option>
                                             <!-- Populated via JS -->

@@ -954,9 +954,9 @@ $studentPhone = $studentPhone ?? '';
                             </select>
                         </div>
                         <div class="filter-group">
-                            <label>College</label>
-                            <select class="filter-select" id="filter-college">
-                                <option value="all">All Colleges</option>
+                            <label>Department</label>
+                            <select class="filter-select" id="filter-department">
+                                <option value="all">All Departments</option>
                             </select>
                         </div>
                         <div class="filter-group">
@@ -1244,7 +1244,7 @@ $studentPhone = $studentPhone ?? '';
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>College (Department)</label>
+                            <label>Department</label>
                             <select id="edit-user-department" name="department_id" class="form-control">
                                 <option value="">N/A</option>
                                 <?php foreach ($service->getDepartments() as $d): ?>
@@ -1350,9 +1350,9 @@ $studentPhone = $studentPhone ?? '';
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
-                            <label>College</label>
+                            <label>Department</label>
                             <select class="form-control" name="department_id" id="add-general-dept">
-                                <option value="">Select College</option>
+                                <option value="">Select Department</option>
                                 <?php foreach ($departments as $dept): ?>
                                     <option value="<?= (int) $dept['id'] ?>"><?= htmlspecialchars($dept['name']) ?></option>
                                 <?php endforeach; ?>

@@ -137,7 +137,7 @@ class Database
                 session_id INTEGER NOT NULL,
                 facilitator TEXT NOT NULL,
                 user TEXT NOT NULL,
-                college TEXT NOT NULL,
+                department TEXT NOT NULL,
                 topic TEXT NOT NULL,
                 action TEXT NOT NULL,
                 log_date TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -327,7 +327,7 @@ class Database
             facilitator TEXT,
             user TEXT,
             requester_email TEXT,
-            college TEXT,
+            department TEXT,
             topic TEXT,
             action TEXT,
             log_date TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -357,7 +357,7 @@ class Database
         $this->ensureColumn('session_logs', 'facilitator', 'TEXT');
         $this->ensureColumn('session_logs', 'user', 'TEXT');
         $this->ensureColumn('session_logs', 'requester_email', 'TEXT');
-        $this->ensureColumn('session_logs', 'college', 'TEXT');
+        $this->ensureColumn('session_logs', 'department', 'TEXT');
         $this->ensureColumn('session_logs', 'topic', 'TEXT');
         $this->ensureColumn('session_logs', 'action', 'TEXT');
         $this->ensureColumn('session_logs', 'log_date', 'TEXT DEFAULT CURRENT_TIMESTAMP');
@@ -417,7 +417,7 @@ class Database
                 facilitator TEXT,
                 user TEXT,
                 requester_email TEXT,
-                college TEXT,
+                department TEXT,
                 topic TEXT,
                 action TEXT,
                 log_date TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -425,8 +425,8 @@ class Database
                 FOREIGN KEY(session_id) REFERENCES sessions(id)
             )");
 
-            $this->pdo->exec("INSERT INTO session_logs (id, session_id, facilitator, user, requester_email, college, topic, action, log_date, session_status)
-                SELECT id, session_id, facilitator, user, requester_email, college, topic, action, log_date, session_status
+            $this->pdo->exec("INSERT INTO session_logs (id, session_id, facilitator, user, requester_email, department, topic, action, log_date, session_status)
+                SELECT id, session_id, facilitator, user, requester_email, department, topic, action, log_date, session_status
                 FROM session_logs_old");
 
             $this->pdo->exec("DROP TABLE session_logs_old");

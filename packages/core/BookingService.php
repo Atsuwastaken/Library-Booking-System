@@ -619,10 +619,10 @@ class BookingService
                 $params[] = $filters['requestor'];
                 $params[] = '%' . $filters['requestor'] . '%';
             }
-            if (!empty($filters['college']) && $filters['college'] !== 'all') {
+            if (!empty($filters['department']) && $filters['department'] !== 'all') {
                 $where[] = "(u.department_id = ? OR s.requester_department_id = ?)";
-                $params[] = $filters['college'];
-                $params[] = $filters['college'];
+                $params[] = $filters['department'];
+                $params[] = $filters['department'];
             }
             if (!empty($filters['facilitator']) && $filters['facilitator'] !== 'all') {
                 $where[] = "s.facilitator_id = ?";
@@ -845,7 +845,7 @@ class BookingService
                                    COALESCE(s.outside_facilitator, f.name, '') AS facilitator_name,
                                    COALESCE(u.name, s.requester_name, '') AS user_name,
                                    COALESCE(u.email, s.requester_email, '') AS requester_email,
-                                   COALESCE(d.name, rd.name, '') AS college_name
+                                   COALESCE(d.name, rd.name, '') AS department_name
                                    FROM sessions s
                                    LEFT JOIN facilitators f ON s.facilitator_id = f.id
                                    LEFT JOIN users u ON s.user_id = u.id
@@ -868,13 +868,13 @@ class BookingService
             return $v !== '' ? $v : $default;
         };
 
-        $stmt = $this->db->prepare('INSERT INTO session_logs (session_id, facilitator, user, requester_email, college, topic, action, log_date, session_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt = $this->db->prepare('INSERT INTO session_logs (session_id, facilitator, user, requester_email, department, topic, action, log_date, session_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $stmt->execute([
             $details['session_id'] ?? null,
             $fmt($details['facilitator_name'] ?? '', 'TBA'),
             $fmt($details['user_name'] ?? ''),
             $fmt($details['requester_email'] ?? ''),
-            $fmt($details['college_name'] ?? ''),
+            $fmt($details['department_name'] ?? ''),
             $fmt($details['topic'] ?? ''),
             $action,
             date('Y-m-d H:i:s'),

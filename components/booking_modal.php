@@ -173,7 +173,7 @@ $readonlyAttr = $isStudent ? 'readonly style="background-color: #e2e8f0; cursor:
 
             <div class="booking-footer-info">
                 <p>Your Appointment status will be "Pending" until the Library admin "Confirms" or "Cancels" your booking request, you will be notified through email if your appointment was accepted. The VENUE or PLATFORM will also be appointed by the library admin.</p>
-                <p style="margin-top: 1rem;">Details such as the booking request's associated NAME, EMAIL, and COLLEGE, will be automatically taken from the user account used to BOOK this request.</p>
+                <p style="margin-top: 1rem;">Details such as the booking request's associated NAME, EMAIL, and DEPARTMENT, will be automatically taken from the user account used to BOOK this request.</p>
             </div>
 
             <button type="submit" class="btn-book-final" id="btn-confirm-advanced">Book</button>

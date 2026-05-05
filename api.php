@@ -654,7 +654,7 @@ if ($action === 'get_appointments') {
 
     $filters = [
         'requestor' => $_GET['requestor'] ?? 'all',
-        'college' => $_GET['college'] ?? 'all',
+        'department' => $_GET['department'] ?? 'all',
         'facilitator' => $_GET['facilitator'] ?? 'all',
         'status' => $_GET['status'] ?? 'all',
         'datetime' => $_GET['datetime'] ?? 'newest',

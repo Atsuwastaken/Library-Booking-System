@@ -69,163 +69,229 @@ document.addEventListener('DOMContentLoaded', () => {
             userSidebar.classList.toggle('active');
         });
 
-function openCancellationReasonModal({
-    title = 'Cancel Appointment',
-    message = 'You may optionally provide a reason before confirming cancellation.',
-    confirmText = 'Confirm Cancellation',
-    cancelText = 'Keep Appointment',
-    reasonLabel = 'Cancellation reason (optional)',
-    reasonPlaceholder = 'Type a reason, or leave blank to continue...'
-} = {}) {
-    const modal = document.getElementById('cancel-reason-modal');
-    const titleEl = document.getElementById('cancel-reason-title');
-    const messageEl = document.getElementById('cancel-reason-message');
-    const reasonLabelEl = document.getElementById('cancel-reason-label');
-    const reasonEl = document.getElementById('cancel-reason-input');
-    const closeBtn = document.getElementById('cancel-reason-close');
-    const confirmBtn = document.getElementById('cancel-reason-confirm');
 
-    // If modal is unavailable, safely abort instead of using native browser dialogs.
-    if (!modal || !reasonEl || !closeBtn || !confirmBtn) {
-        console.warn('Cancellation modal is not available in DOM.');
-        return Promise.resolve(null);
-    }
-
-    if (titleEl) titleEl.textContent = title;
-    if (messageEl) messageEl.textContent = message;
-    if (reasonLabelEl) reasonLabelEl.textContent = reasonLabel;
-    closeBtn.textContent = cancelText;
-    confirmBtn.textContent = confirmText;
-    reasonEl.value = '';
-    reasonEl.placeholder = reasonPlaceholder;
-
-    return new Promise(resolve => {
-        const onConfirm = () => {
-            const val = reasonEl.value.trim();
-            cleanup();
-            resolve(val);
-        };
-
-        const onClose = () => {
-            cleanup();
-            resolve(null);
-        };
-
-        const onBackdrop = (e) => {
-            if (e.target === modal) onClose();
-        };
-
-        const onEsc = (e) => {
-            if (e.key === 'Escape') onClose();
-        };
-
-        function cleanup() {
-            modal.classList.remove('active');
-            confirmBtn.removeEventListener('click', onConfirm);
-            closeBtn.removeEventListener('click', onClose);
-            modal.removeEventListener('click', onBackdrop);
-            document.removeEventListener('keydown', onEsc);
-        }
-
-        confirmBtn.addEventListener('click', onConfirm);
-        closeBtn.addEventListener('click', onClose);
-        modal.addEventListener('click', onBackdrop);
-        document.addEventListener('keydown', onEsc);
-        modal.classList.add('active');
-        reasonEl.focus();
-    });
-}
-
-function openChangeInstructorModal(facilitators = [], currentFacilitatorId = null) {
-    const modal = document.getElementById('change-instructor-modal');
-    const listEl = document.getElementById('change-instructor-list');
-    const closeBtn = document.getElementById('change-instructor-close');
-    const confirmBtn = document.getElementById('change-instructor-confirm');
-    let selectedFacilitatorId = null;
-
-    if (!modal || !listEl || !closeBtn || !confirmBtn) {
-        console.warn('Change instructor modal is not available in DOM.');
-        return Promise.resolve(null);
-    }
-
-    listEl.innerHTML = '';
-    if (!facilitators.length) {
-        listEl.innerHTML = '<div class="loader-container">No available facilitators for this topic.</div>';
-    } else {
-        facilitators.forEach(f => {
-            const card = document.createElement('div');
-            card.className = 'fac-card-new';
-            card.innerHTML = `
-                <div class="fac-avatar-new">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                </div>
-                <div class="fac-info-new">
-                    <h5>${f.name}</h5>
-                    <p>${f.position || 'Library Faculty'}</p>
-                </div>
-            `;
-
-            card.addEventListener('click', () => {
-                listEl.querySelectorAll('.fac-card-new').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                selectedFacilitatorId = String(f.id);
-            });
-
-            if (currentFacilitatorId && String(f.id) === String(currentFacilitatorId)) {
-                card.classList.add('selected');
-                selectedFacilitatorId = String(f.id);
-            }
-
-            listEl.appendChild(card);
-        });
-    }
-
-    return new Promise(resolve => {
-        const onConfirm = () => {
-            if (!selectedFacilitatorId) {
-                alert('Please select an instructor first.');
-                return;
-            }
-            cleanup();
-            resolve(selectedFacilitatorId);
-        };
-
-        const onClose = () => {
-            cleanup();
-            resolve(null);
-        };
-
-        const onBackdrop = (e) => {
-            if (e.target === modal) onClose();
-        };
-
-        const onEsc = (e) => {
-            if (e.key === 'Escape') onClose();
-        };
-
-        function cleanup() {
-            modal.classList.remove('active');
-            confirmBtn.removeEventListener('click', onConfirm);
-            closeBtn.removeEventListener('click', onClose);
-            modal.removeEventListener('click', onBackdrop);
-            document.removeEventListener('keydown', onEsc);
-        }
-
-        confirmBtn.addEventListener('click', onConfirm);
-        closeBtn.addEventListener('click', onClose);
-        modal.addEventListener('click', onBackdrop);
-        document.addEventListener('keydown', onEsc);
-        modal.classList.add('active');
-        if (listEl.firstElementChild && listEl.firstElementChild.classList.contains('fac-card-new')) {
-            listEl.firstElementChild.focus?.();
-        }
-    });
-}
 
         document.addEventListener('click', (e) => {
             if (userSidebar.classList.contains('active') && !userSidebar.contains(e.target) && e.target !== avatarBtn && !avatarBtn.contains(e.target)) {
                 userSidebar.classList.remove('active');
             }
+        });
+    }
+
+    function openCancellationReasonModal({
+        title = 'Cancel Appointment',
+        message = 'You may optionally provide a reason before confirming cancellation.',
+        confirmText = 'Confirm Cancellation',
+        cancelText = 'Keep Appointment',
+        reasonLabel = 'Cancellation reason (optional)',
+        reasonPlaceholder = 'Type a reason, or leave blank to continue...'
+    } = {}) {
+        const modal = document.getElementById('cancel-reason-modal');
+        const titleEl = document.getElementById('cancel-reason-title');
+        const messageEl = document.getElementById('cancel-reason-message');
+        const reasonLabelEl = document.getElementById('cancel-reason-label');
+        const reasonEl = document.getElementById('cancel-reason-input');
+        const closeBtn = document.getElementById('cancel-reason-close');
+        const confirmBtn = document.getElementById('cancel-reason-confirm');
+
+        // If modal is unavailable, safely abort instead of using native browser dialogs.
+        if (!modal || !reasonEl || !closeBtn || !confirmBtn) {
+            console.warn('Cancellation modal is not available in DOM.');
+            return Promise.resolve(null);
+        }
+
+        if (titleEl) titleEl.textContent = title;
+        if (messageEl) messageEl.textContent = message;
+        if (reasonLabelEl) reasonLabelEl.textContent = reasonLabel;
+        closeBtn.textContent = cancelText;
+        confirmBtn.textContent = confirmText;
+        reasonEl.value = '';
+        reasonEl.placeholder = reasonPlaceholder;
+
+        return new Promise(resolve => {
+            const onConfirm = () => {
+                const val = reasonEl.value.trim();
+                cleanup();
+                resolve(val);
+            };
+
+            const onClose = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            const onBackdrop = (e) => {
+                if (e.target === modal) onClose();
+            };
+
+            const onEsc = (e) => {
+                if (e.key === 'Escape') onClose();
+            };
+
+            function cleanup() {
+                modal.classList.remove('active');
+                confirmBtn.removeEventListener('click', onConfirm);
+                closeBtn.removeEventListener('click', onClose);
+                modal.removeEventListener('click', onBackdrop);
+                document.removeEventListener('keydown', onEsc);
+            }
+
+            confirmBtn.addEventListener('click', onConfirm);
+            closeBtn.addEventListener('click', onClose);
+            modal.addEventListener('click', onBackdrop);
+            document.addEventListener('keydown', onEsc);
+            modal.classList.add('active');
+            reasonEl.focus();
+        });
+    }
+
+    function openChangeInstructorModal(facilitators = [], currentFacilitatorId = null, dateTime = null, endTime = null, currentBookingId = null) {
+        const modal = document.getElementById('change-instructor-modal');
+        const selectEl = document.getElementById('change-instructor-select');
+        const closeBtn = document.getElementById('change-instructor-close');
+        const confirmBtn = document.getElementById('change-instructor-confirm');
+        const errorEl = document.getElementById('change-instructor-error');
+        const axisZones = document.getElementById('change-axis-zones');
+
+        if (!modal || !selectEl || !closeBtn || !confirmBtn) {
+            console.warn('Change instructor modal is not available in DOM.');
+            return Promise.resolve(null);
+        }
+
+        // Populate Select
+        selectEl.innerHTML = '<option value="" disabled selected>Choose an instructor...</option>';
+        facilitators.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = f.name;
+            if (currentFacilitatorId && String(f.id) === String(currentFacilitatorId)) {
+                opt.selected = true;
+            }
+            selectEl.appendChild(opt);
+        });
+
+        const dateStr = dateTime ? dateTime.split(' ')[0] : '';
+
+        const renderAxis = () => {
+            if (!axisZones) return;
+            axisZones.innerHTML = '';
+            const startH = 9;
+            const totalH = 11;
+
+            const addZone = (s, e, className) => {
+                if (e <= startH || s >= startH + totalH) return;
+                const left = Math.max(0, ((s - startH) / totalH) * 100);
+                const width = Math.min(100 - left, ((e - s) / totalH) * 100);
+                if (width <= 0) return;
+                const zone = document.createElement('div');
+                zone.className = `axis-zone ${className}`;
+                zone.style.left = `${left}%`;
+                zone.style.width = `${width}%`;
+                axisZones.appendChild(zone);
+            };
+
+            // 1. Instructor Bookings
+            const fid = selectEl.value;
+            if (fid && fid !== 'null') {
+                const bookings = allSessions.filter(s =>
+                    s.facilitator_id == fid &&
+                    s.date_time.startsWith(dateStr) &&
+                    String(s.booking_status).toUpperCase() === 'CONFIRMED' &&
+                    s.session_id != currentBookingId
+                );
+                bookings.forEach(b => {
+                    const bDate = new Date(b.date_time.replace(/-/g, '/'));
+                    const sH = bDate.getHours() + (bDate.getMinutes() / 60);
+                    let eH = sH + 1;
+                    if (b.end_time) {
+                        const eDate = new Date(b.end_time.replace(/-/g, '/'));
+                        eH = eDate.getHours() + (eDate.getMinutes() / 60);
+                    }
+                    addZone(sH, eH, 'zone-booked');
+                });
+            }
+
+            // 2. Current Session Selection
+            if (dateTime && endTime) {
+                const sDate = new Date(dateTime.replace(/-/g, '/'));
+                const eDate = new Date(endTime.replace(/-/g, '/'));
+                const sH = sDate.getHours() + (sDate.getMinutes() / 60);
+                const eH = eDate.getHours() + (eDate.getMinutes() / 60);
+                addZone(sH, eH, 'zone-selected');
+            }
+        };
+
+        const validate = () => {
+            const fid = selectEl.value;
+            if (!fid || fid === 'null') return false;
+
+            const sDate = new Date(dateTime.replace(/-/g, '/'));
+            const eDate = new Date(endTime.replace(/-/g, '/'));
+            const startMins = sDate.getHours() * 60 + sDate.getMinutes();
+            const endMins = eDate.getHours() * 60 + eDate.getMinutes();
+
+            const conflict = allSessions.find(s => {
+                if (s.facilitator_id != fid || String(s.booking_status).toUpperCase() !== 'CONFIRMED') return false;
+                if (!s.date_time.startsWith(dateStr)) return false;
+                if (s.session_id == currentBookingId) return false;
+
+                const sTimeStr = s.date_time.split(' ')[1];
+                const eTimeStr = s.end_time ? s.end_time.split(' ')[1] : null;
+                if (!sTimeStr || !eTimeStr) return false;
+
+                const [sh, sm] = sTimeStr.split(':').map(Number);
+                const [eh, em] = eTimeStr.split(':').map(Number);
+                const sMins = sh * 60 + sm;
+                const eMins = eh * 60 + em;
+
+                return (startMins < eMins && endMins > sMins);
+            });
+
+            if (conflict) {
+                errorEl.textContent = 'This instructor has a schedule conflict at this time.';
+                errorEl.style.display = 'block';
+                return false;
+            }
+            errorEl.style.display = 'none';
+            return true;
+        };
+
+        const onSelectChange = () => {
+            renderAxis();
+            validate();
+        };
+        selectEl.addEventListener('change', onSelectChange);
+        renderAxis();
+        validate();
+
+        return new Promise(resolve => {
+            const onConfirm = () => {
+                if (!selectEl.value) {
+                    alert('Please select an instructor.');
+                    return;
+                }
+                if (!validate()) return;
+                cleanup();
+                resolve(selectEl.value);
+            };
+            const onClose = () => { cleanup(); resolve(null); };
+            const onBackdrop = (e) => { if (e.target === modal) onClose(); };
+            const onEsc = (e) => { if (e.key === 'Escape') onClose(); };
+
+            function cleanup() {
+                modal.classList.remove('active');
+                confirmBtn.removeEventListener('click', onConfirm);
+                closeBtn.removeEventListener('click', onClose);
+                modal.removeEventListener('click', onBackdrop);
+                document.removeEventListener('keydown', onEsc);
+                selectEl.removeEventListener('change', onSelectChange);
+            }
+
+            confirmBtn.addEventListener('click', onConfirm);
+            closeBtn.addEventListener('click', onClose);
+            modal.addEventListener('click', onBackdrop);
+            document.addEventListener('keydown', onEsc);
+            modal.classList.add('active');
         });
     }
 
@@ -260,6 +326,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     loadFacilitators();
                 } else if (targetTab === 'my-sessions') {
                     loadFacilitatorSessions();
+                } else if (targetTab === 'profile') {
+                    loadProfile();
                 }
             });
         });
@@ -372,7 +440,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         if (allSessions.length === 0 || forceFetch) {
             try {
                 const [appointmentsRes, offDaysRes] = await Promise.all([
-                    fetch('api.php?action=get_appointments'),
+                    fetch('api.php?action=get_appointments&my_appointments=true'),
                     fetch('api.php?action=get_off_days')
                 ]);
 
@@ -445,8 +513,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
 
             if (data.success && Array.isArray(data.facilitators)) {
                 list.innerHTML = '';
-                const instructors = data.facilitators.slice(0, 5); 
-                
+                const instructors = data.facilitators.slice(0, 5);
+
                 if (instructors.length === 0) {
                     list.innerHTML = '<div style="color: #94a3b8; font-size: 0.85rem; text-align: center; padding: 1rem 0;">No instructors available.</div>';
                     return;
@@ -1119,7 +1187,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         try {
             let url = 'api.php?action=get_topics';
             if (deptId) url += `&department_id=${deptId}`;
-            
+
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
@@ -1303,7 +1371,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                 if (standardTimeInputs) standardTimeInputs.style.display = 'none';
                 if (timeAxisWrapper) timeAxisWrapper.style.display = 'none';
                 if (wholeDayNotice) wholeDayNotice.style.display = 'flex';
-                if (timeLabel) timeLabel.textContent = 'Time:';
+                if (timeLabel) timeLabel.textContent = 'Time: (Seminars are whole-day events)';
                 if (durationHint) durationHint.textContent = '';
                 if (errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
                 // Set hidden time values to full day for the API
@@ -1378,7 +1446,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             return false;
         }
 
-        // Duration limits for Instructional Program and Orientation
+        // 4. Duration limits for Instructional Program and Orientation
         if (type === 'Instructional Program' || type === 'Orientation') {
             if (diff < 30) {
                 errorEl.textContent = `${type}s must be at least 30 minutes.`;
@@ -1387,6 +1455,31 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             }
             if (diff > 240) {
                 errorEl.textContent = `${type}s cannot exceed 4 hours.`;
+                errorEl.style.display = 'block';
+                return false;
+            }
+        }
+
+        // 5. Facilitator Conflict Check (Instructional Program only)
+        if (type === 'Instructional Program' && selectedFacId) {
+            const conflict = allSessions.find(s => {
+                if (s.facilitator_id != selectedFacId || s.status !== 'CONFIRMED') return false;
+                if (!s.date_time.startsWith(selectedDate)) return false;
+
+                const sTimeStr = s.date_time.split(' ')[1];
+                const eTimeStr = s.end_time ? s.end_time.split(' ')[1] : null;
+                if (!sTimeStr || !eTimeStr) return false;
+
+                const [sh, sm] = sTimeStr.split(':').map(Number);
+                const [eh, em] = eTimeStr.split(':').map(Number);
+                const sMins = sh * 60 + sm;
+                const eMins = eh * 60 + em;
+
+                return (startMins < eMins && endMins > sMins);
+            });
+
+            if (conflict) {
+                errorEl.textContent = 'The selected facilitator is already booked at this time.';
                 errorEl.style.display = 'block';
                 return false;
             }
@@ -1536,7 +1629,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             zone.className = `axis-zone ${className}`;
             zone.style.left = `${left}%`;
             zone.style.width = `${width}%`;
-            
+
             // Format time for tooltip
             const formatHour = (h) => {
                 const hour = Math.floor(h);
@@ -1550,7 +1643,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const eLabel = formatHour(e);
             const typeLabel = className === 'zone-lunch' ? 'Lunch Break' : (className === 'zone-booked' ? 'Already Booked' : 'Your Selection');
             zone.title = `${typeLabel}: ${sLabel} - ${eLabel}`;
-            
+
             container.appendChild(zone);
         }
     }
@@ -1703,7 +1796,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     return;
                 }
             }
-            
+
             if (reqName || reqEmail || (reqDept && reqDept.value)) {
                 customRequestor.name = reqName;
                 customRequestor.email = reqEmail;
@@ -1719,7 +1812,6 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                 phone: document.getElementById('book-phone').value,
                 department: (currentUser && currentUser.department_id) ? currentUser.department_id : '',
                 notes: document.getElementById('book-notes').value,
-                reminder: document.getElementById('book-reminder').value,
                 mode: mode,
                 facilitator_id: finalFacId,
                 date: selectedDate,
@@ -1830,7 +1922,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         }
 
         try {
-            const res = await fetch('api.php?action=get_appointments');
+            const res = await fetch('api.php?action=get_appointments&my_appointments=true');
             const data = await res.json();
 
             if (data.success) {
@@ -1863,8 +1955,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const emptyText = appointmentsSubview === 'cancelled'
                 ? 'No cancelled/declined appointments found.'
                 : appointmentsSubview === 'completed'
-                ? 'No completed appointments found.'
-                : 'No appointments found.';
+                    ? 'No completed appointments found.'
+                    : 'No appointments found.';
             grid.innerHTML = `<div class="loader-container">${emptyText}</div>`;
             return;
         }
@@ -1932,10 +2024,15 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                         </div>
                         <div class="form-group">
                             <label>Facilitator</label>
-                            <select id="fac-${app.session_id}" class="login-input" ${lockedByStudentCancellation ? 'disabled' : ''}>
+                            <select id="fac-${app.session_id}" class="login-input" ${lockedByStudentCancellation ? 'disabled' : ''} onchange="toggleOutsideFacilitator(${app.session_id})">
                                 <option value="null">TBA</option>
                                 ${(allFacilitators || []).map(f => `<option value="${f.id}" ${app.facilitator_id == f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
+                                ${app.appointment_type === 'Seminar' ? `<option value="other" ${app.outside_facilitator ? 'selected' : ''}>Other Facilitators</option>` : ''}
                             </select>
+                        </div>
+                        <div id="outside-fac-group-${app.session_id}" class="form-group" style="display: ${app.outside_facilitator || (app.appointment_type === 'Seminar' && document.getElementById(`fac-${app.session_id}`)?.value === 'other') ? 'block' : 'none'}; margin-top: 0.5rem;">
+                            <label>Outside Facilitator Name</label>
+                            <input type="text" id="outside-fac-${app.session_id}" class="login-input" value="${app.outside_facilitator || ''}" placeholder="Enter name...">
                         </div>
                         <button class="btn btn-primary btn-sm" onclick="saveAppointmentAdmin(${app.session_id})" style="width: 100%; margin-top: 0.5rem; ${lockedByStudentCancellation ? 'opacity: 0.6; cursor: not-allowed;' : ''}" ${lockedByStudentCancellation ? 'disabled' : ''}>Save Changes</button>
                     </div>
@@ -1943,7 +2040,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             } else {
                 html += `
                     <p style="margin-bottom: 0.5rem"><strong>Venue:</strong> ${app.venue || 'TBA'}</p>
-                    <p style="margin-bottom: 0.5rem"><strong>Instructor:</strong> ${app.facilitator_name || 'TBA'}</p>
+                    <p style="margin-bottom: 0.5rem"><strong>Instructor:</strong> ${app.outside_facilitator || app.facilitator_name || 'TBA'}</p>
                     ${normalizedStatus === 'COMPLETED' ? `
                         <div style="margin-top: 1rem; padding: 0.75rem; background: #f0fdf4; border-left: 3px solid #22c55e; border-radius: 4px;">
                             <p style="margin: 0 0 0.5rem 0; color: #22c55e; font-weight: 600;">✓ Completed</p>
@@ -1960,7 +2057,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     ` : ''}
                     <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
                         ${!isClosed && normalizedStatus !== 'COMPLETED' ? `<button class="btn btn-outline btn-sm" onclick="cancelAppointmentUser(${app.session_id})" style="color: var(--danger); border-color: var(--danger);">Cancel</button>` : ''}
-                        ${app.appointment_type === 'Instructional Program' && app.facilitator_id && !isClosed && normalizedStatus !== 'COMPLETED' ? `<button class="btn btn-muted btn-sm" onclick="changeInstructor(${app.session_id}, '${String(app.topic || '').replace(/'/g, "\\'")}', ${app.facilitator_id || 'null'})">Change Instructor</button>` : ''}
+                        ${app.appointment_type === 'Instructional Program' && app.facilitator_id && !isClosed && normalizedStatus !== 'COMPLETED' ? `<button class="btn btn-muted btn-sm" onclick="changeInstructor(${app.session_id}, '${String(app.topic || '').replace(/'/g, "\\'")}', ${app.facilitator_id || 'null'}, '${app.date_time}', '${app.end_time}')">Change Instructor</button>` : ''}
                     </div>
                 `;
             }
@@ -1977,7 +2074,9 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
 
         const st = document.getElementById(`status-${bookingId}`).value;
         const vn = document.getElementById(`venue-${bookingId}`).value;
-        const fc = document.getElementById(`fac-${bookingId}`).value;
+        const facSelect = document.getElementById(`fac-${bookingId}`);
+        const fc = facSelect.value;
+        const outsideFac = fc === 'other' ? document.getElementById(`outside-fac-${bookingId}`).value : null;
         let cancellationReason = null;
         let cancelledBy = null;
         let evaluationNotes = null;
@@ -2011,7 +2110,16 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         try {
             const res = await fetch('api.php?action=update_appointment', {
                 method: 'POST',
-                body: JSON.stringify({ id: bookingId, status: st, venue: vn, facilitator_id: fc, cancellation_reason: cancellationReason, cancelled_by: cancelledBy, evaluation_notes: evaluationNotes })
+                body: JSON.stringify({ 
+                    id: bookingId, 
+                    status: st, 
+                    venue: vn, 
+                    facilitator_id: (fc === 'other' ? null : fc), 
+                    outside_facilitator: outsideFac,
+                    cancellation_reason: cancellationReason, 
+                    cancelled_by: cancelledBy, 
+                    evaluation_notes: evaluationNotes 
+                })
             });
             const data = await res.json();
             if (data.success) {
@@ -2021,6 +2129,14 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             }
         } catch (e) {
             console.error(e);
+        }
+    };
+
+    window.toggleOutsideFacilitator = (id) => {
+        const select = document.getElementById(`fac-${id}`);
+        const group = document.getElementById(`outside-fac-group-${id}`);
+        if (select && group) {
+            group.style.display = select.value === 'other' ? 'block' : 'none';
         }
     };
 
@@ -2048,7 +2164,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         } catch (e) { }
     };
 
-    window.changeInstructor = async (bookingId, topicName, currentFacilitatorId = null) => {
+    window.changeInstructor = async (bookingId, topicName, currentFacilitatorId = null, dateTime = null, endTime = null) => {
         let topicId = null;
 
         try {
@@ -2085,8 +2201,8 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             return;
         }
 
-        const selectedFacilitatorId = await openChangeInstructorModal(facilitators, currentFacilitatorId);
-        if (!selectedFacilitatorId) return;
+        const selectedFacilitatorId = await openChangeInstructorModal(facilitators, currentFacilitatorId, dateTime, endTime, bookingId);
+        if (!selectedFacilitatorId || String(selectedFacilitatorId) === String(currentFacilitatorId)) return;
 
         try {
             const res = await fetch('api.php?action=change_instructor', {
@@ -2096,8 +2212,12 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const data = await res.json();
             if (data.success) {
                 loadAppointments();
+            } else {
+                alert(data.message || 'Failed to change instructor.');
             }
-        } catch (e) { }
+        } catch (e) {
+            alert('An error occurred while changing the instructor.');
+        }
     };
 
 
@@ -2111,7 +2231,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         if (!miniGrid) return;
 
         miniGrid.innerHTML = '';
-        
+
         const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         if (miniDateDisplay) {
             miniDateDisplay.textContent = `${monthNames[miniCurrentMonth]} ${miniCurrentYear}`;
@@ -2147,17 +2267,29 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
             const dayEl = document.createElement('div');
             dayEl.className = 'mini-day';
             dayEl.textContent = i;
-            
+
             const thisDate = new Date(miniCurrentYear, miniCurrentMonth, i);
             const dateStr = formatLocalDate(thisDate);
-            
+
             if (dateStr === todayStr) dayEl.classList.add('today');
             if (dateStr === selectedDate) dayEl.classList.add('selected');
-            
+
             // Sunday restriction or past/near-past
             if (thisDate < gapDate || thisDate.getDay() === 0) dayEl.classList.add('restricted');
+            
+            const offDay = allOffDays.find(od => od.date === dateStr);
+            if (offDay) {
+                dayEl.classList.add('restricted');
+                dayEl.classList.add('off-day');
+                dayEl.title = offDay.description || 'Off-day';
+            }
 
             dayEl.addEventListener('click', () => {
+                if (offDay) {
+                    showCalendarNotice(offDay.description ? offDay.description : 'This day is unavailable for booking.');
+                    return;
+                }
+
                 if (dayEl.classList.contains('restricted')) {
                     if (thisDate.getDay() === 0) {
                         alert('Library is closed on Sundays.');
@@ -2166,11 +2298,11 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     }
                     return;
                 }
-                
+
                 selectedDate = dateStr;
                 document.querySelectorAll('.mini-day').forEach(d => d.classList.remove('selected'));
                 dayEl.classList.add('selected');
-                
+
                 if (typeof openAdvancedBooking === 'function') {
                     openAdvancedBooking(dateStr);
                 }
@@ -2213,7 +2345,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
 
     // Hook into updateCalendar
     const originalUpdateCalendar = updateCalendar;
-    updateCalendar = async function(forceFetch = false) {
+    updateCalendar = async function (forceFetch = false) {
         await originalUpdateCalendar(forceFetch);
         renderMiniCalendar();
     };
@@ -2241,7 +2373,7 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
                     card.className = 'session-card';
                     const dt = new Date(s.date_time.replace(/-/g, '/'));
                     const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
+
                     card.innerHTML = `
                         <div class="session-top">
                             <span class="session-type">${s.type}</span>
@@ -2263,5 +2395,176 @@ function openChangeInstructorModal(facilitators = [], currentFacilitatorId = nul
         } catch (e) {
             grid.innerHTML = '<p>Error loading sessions.</p>';
         }
+    }
+
+    async function loadProfile() {
+        const profileStatus = document.getElementById('profile-status');
+        if (profileStatus) profileStatus.style.display = 'none';
+
+        try {
+            const res = await fetch('api.php?action=get_user_info');
+            const data = await res.json();
+
+            if (data.success && data.user) {
+                const u = data.user;
+                document.getElementById('prof-name').value = u.name || '';
+                document.getElementById('prof-email').value = u.email || '';
+
+                const deptSelect = document.getElementById('prof-department');
+                if (deptSelect) {
+                    if (deptSelect.options.length <= 1) {
+                        deptSelect.innerHTML = '<option value="">Select department</option>' +
+                            allDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+                    }
+                    deptSelect.value = u.department_id || '';
+                }
+
+                const isStudent = (u.user_type === 'student');
+                const studentSection = document.getElementById('prof-student-section');
+                if (studentSection) studentSection.style.display = isStudent ? 'block' : 'none';
+
+                if (isStudent) {
+                    document.getElementById('prof-student-number').value = u.student_number || '';
+                    document.getElementById('prof-year-level').value = u.year_level || '';
+                    document.getElementById('prof-enrollment-status').value = u.enrollment_status || 'Regular';
+
+                    const deptName = deptSelect.options[deptSelect.selectedIndex]?.text || '';
+                    const isBasicEd = ["Grade School", "Junior High School", "Preschool"].some(d => deptName.toLowerCase().includes(d.toLowerCase()));
+                    const programField = document.getElementById('prof-program')?.closest('.field');
+                    const yearField = document.getElementById('prof-year-level')?.closest('.field');
+                    const statusField = document.getElementById('prof-enrollment-status')?.closest('.field');
+
+                    if (programField) programField.style.display = isBasicEd ? 'none' : 'block';
+                    if (yearField) yearField.style.display = isBasicEd ? 'none' : 'block';
+                    if (statusField) statusField.style.display = isBasicEd ? 'none' : 'block';
+
+                    await loadProfilePrograms(u.department_id, u.course_program);
+                }
+
+                document.getElementById('prof-role-badge').textContent = u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'General';
+                document.getElementById('prof-type-text').textContent = u.user_type ? u.user_type.charAt(0).toUpperCase() + u.user_type.slice(1) : 'N/A';
+            }
+        } catch (e) {
+            console.error("Failed to load profile:", e);
+        }
+    }
+
+    async function loadProfilePrograms(deptId, selectedProgramId = null) {
+        const programSelect = document.getElementById('prof-program');
+        if (!programSelect) return;
+
+        const deptSelect = document.getElementById('prof-department');
+        const deptName = deptSelect?.options[deptSelect.selectedIndex]?.text || '';
+        const isBasicEd = ["Grade School", "Junior High School", "Preschool"].some(d => deptName.toLowerCase().includes(d.toLowerCase()));
+        const programField = programSelect.closest('.field');
+        const yearField = document.getElementById('prof-year-level')?.closest('.field');
+        const statusField = document.getElementById('prof-enrollment-status')?.closest('.field');
+
+        if (programField) {
+            programField.style.display = isBasicEd ? 'none' : 'block';
+            if (isBasicEd) programSelect.value = '';
+        }
+        if (yearField) {
+            yearField.style.display = isBasicEd ? 'none' : 'block';
+            if (isBasicEd) document.getElementById('prof-year-level').value = '';
+        }
+        if (statusField) {
+            statusField.style.display = isBasicEd ? 'none' : 'block';
+            if (isBasicEd) document.getElementById('prof-enrollment-status').value = '';
+        }
+
+        if (!deptId) {
+            programSelect.innerHTML = '<option value="">Select program</option>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`api.php?action=get_programs&department_id=${deptId}`);
+            const data = await res.json();
+            if (data.success) {
+                programSelect.innerHTML = '<option value="">Select program</option>' +
+                    data.programs.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+                if (selectedProgramId) programSelect.value = selectedProgramId;
+            }
+        } catch (e) {
+            console.error("Failed to load programs:", e);
+        }
+    }
+
+    const profileForm = document.getElementById('profile-update-form');
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('prof-name').value;
+            const email = document.getElementById('prof-email').value;
+            const currentPassword = document.getElementById('prof-current-password').value;
+            const newPassword = document.getElementById('prof-new-password').value;
+            const confirmPassword = document.getElementById('prof-confirm-password').value;
+
+            if (newPassword && newPassword !== confirmPassword) {
+                showProfileStatus('New passwords do not match.', 'error');
+                return;
+            }
+
+            if (newPassword && !currentPassword) {
+                showProfileStatus('Please enter your current password to change it.', 'error');
+                return;
+            }
+
+            const payload = {
+                name,
+                email,
+                department_id: document.getElementById('prof-department').value,
+                student_number: document.getElementById('prof-student-number').value,
+                year_level: document.getElementById('prof-year-level').value,
+                course_program: document.getElementById('prof-program').value,
+                enrollment_status: document.getElementById('prof-enrollment-status').value,
+
+                current_password: currentPassword,
+                new_password: newPassword
+            };
+
+            try {
+                const res = await fetch('api.php?action=update_profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showProfileStatus('Profile updated successfully!', 'success');
+                    const sidebarName = document.querySelector('.pl-user strong');
+                    const sidebarAvatar = document.querySelector('.pl-avatar');
+                    if (sidebarName) sidebarName.textContent = name;
+                    if (sidebarAvatar) sidebarAvatar.textContent = name.trim().charAt(0).toUpperCase();
+
+                    document.getElementById('prof-current-password').value = '';
+                    document.getElementById('prof-new-password').value = '';
+                    document.getElementById('prof-confirm-password').value = '';
+                } else {
+                    showProfileStatus(data.message || 'Failed to update profile.', 'error');
+                }
+            } catch (err) {
+                showProfileStatus('An error occurred. Please try again.', 'error');
+            }
+        });
+    }
+
+    function showProfileStatus(msg, type) {
+        const el = document.getElementById('profile-status');
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = 'block';
+        el.style.background = type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+        el.style.color = type === 'success' ? '#059669' : '#dc2626';
+    }
+
+    const profDeptSelect = document.getElementById('prof-department');
+    if (profDeptSelect) {
+        profDeptSelect.addEventListener('change', () => {
+            loadProfilePrograms(profDeptSelect.value);
+        });
     }
 });

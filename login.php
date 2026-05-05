@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($user) {
             $_SESSION['user_id'] = (int) $user['id'];
-            $_SESSION['user_role'] = strtolower((string) ($user['role'] ?? 'student'));
+            $_SESSION['user_role'] = strtolower((string) ($user['role'] ?? 'general'));
             $_SESSION['facilitator_id'] = !empty($user['facilitator_id']) ? (int) $user['facilitator_id'] : null;
 
             if ($_SESSION['user_role'] === 'admin') {
@@ -720,17 +720,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="btn-close" id="btn-close-register">&times;</button>
             </div>
             <div class="modal-body">
-                <p class="register-disclaimer">If you are a library staff or library facilitator, please contact an admin to add your custom account.</p>
+                <p class="register-disclaimer">If you are a library staff or library facilitator, please contact an
+                    admin to add your custom account.</p>
                 <form id="register-request-form" novalidate>
                     <div class="field">
                         <label for="reg-name">Full Name</label>
                         <input id="reg-name" type="text" required>
                     </div>
 
-                    <div class="field">
-                        <label for="reg-student-number">Student Number (optional)</label>
-                        <input id="reg-student-number" type="text">
-                    </div>
+
 
                     <div class="field">
                         <label for="reg-email">Email</label>
@@ -752,6 +750,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endforeach; ?>
                         </select>
                     </div>
+
+                    <div class="field">
+                        <label for="reg-user-type">User Type</label>
+                        <select id="reg-user-type" required
+                            style="width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 0.78rem 0.9rem; font-family: inherit; font-size: 0.95rem; background: rgba(255,255,255,0.7); outline: none;">
+                            <option value="student">Student</option>
+                            <option value="non-student" selected>Non-Student</option>
+                        </select>
+                    </div>
+
+                    <div class="field" id="student-number-field" style="display: none;">
+                        <label for="reg-student-number">Student Number</label>
+                        <input id="reg-student-number" type="text">
+                    </div>
+
+                    <div class="field" id="program-field" style="display: none;">
+                        <label for="reg-program">Program</label>
+                        <select id="reg-program"
+                            style="width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 0.78rem 0.9rem; font-family: inherit; font-size: 0.95rem; background: rgba(255,255,255,0.7); outline: none;">
+                            <option value="">Select program</option>
+                        </select>
+                    </div>
+
+
+
+                    <div class="field" id="year-level-field" style="display: none;">
+                        <label for="reg-year-level">Year Level</label>
+                        <select id="reg-year-level"
+                            style="width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 0.78rem 0.9rem; font-family: inherit; font-size: 0.95rem; background: rgba(255,255,255,0.7); outline: none;">
+                            <option value="">Select year</option>
+                            <option value="1st Year">1st Year</option>
+                            <option value="2nd Year">2nd Year</option>
+                            <option value="3rd Year">3rd Year</option>
+                            <option value="4th Year">4th Year</option>
+                            <option value="5th Year">5th Year</option>
+                        </select>
+                    </div>
+
+                    <div class="field" id="enrollment-status-field" style="display: none;">
+                        <label for="reg-enrollment-status">Enrollment Status</label>
+                        <select id="reg-enrollment-status"
+                            style="width: 100%; border: 1.5px solid var(--border); border-radius: 12px; padding: 0.78rem 0.9rem; font-family: inherit; font-size: 0.95rem; background: rgba(255,255,255,0.7); outline: none;">
+                            <option value="Regular">Regular</option>
+                            <option value="Irregular">Irregular</option>
+                        </select>
+                    </div>
+
+
 
                     <button class="btn-submit" id="register-submit-btn" type="submit">Register</button>
                 </form>
@@ -804,17 +850,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 event.preventDefault();
 
                 const payload = {
-                    name: document.getElementById('reg-name')?.value.trim() || '',
-                    student_number: document.getElementById('reg-student-number')?.value.trim() || '',
-                    email: document.getElementById('reg-email')?.value.trim() || '',
+                    student_number: document.getElementById('reg-student-number')?.value || '',
+                    name: document.getElementById('reg-name')?.value || '',
+                    email: document.getElementById('reg-email')?.value || '',
                     password: document.getElementById('reg-password')?.value || '',
-                    department_id: document.getElementById('reg-department')?.value || ''
+                    department_id: document.getElementById('reg-department')?.value || '',
+                    user_type: document.getElementById('reg-user-type')?.value || 'non-student',
+                    year_level: document.getElementById('reg-year-level')?.value || null,
+                    course_program: document.getElementById('reg-program')?.value || null,
+                    enrollment_status: document.getElementById('reg-enrollment-status')?.value || null
                 };
 
                 if (!payload.name || !payload.email || !payload.password || !payload.department_id) {
                     registerStatus.textContent = 'Please complete all required fields.';
                     registerStatus.className = 'register-status error';
                     return;
+                }
+
+                if (payload.user_type === 'student') {
+                    const deptEl = document.getElementById('reg-department');
+                    const deptName = deptEl.options[deptEl.selectedIndex]?.text || '';
+                    const isBasicEd = ["Grade School", "Junior High School", "Preschool"].some(d => deptName.toLowerCase().includes(d.toLowerCase()));
+
+                    if (!payload.student_number || (!isBasicEd && (!payload.course_program || !payload.year_level || !payload.enrollment_status))) {
+                        registerStatus.textContent = 'Please fill all student details.';
+                        registerStatus.className = 'register-status error';
+                        return;
+                    }
                 }
 
                 registerSubmitBtn.disabled = true;
@@ -845,6 +907,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     registerSubmitBtn.disabled = false;
                     registerSubmitBtn.textContent = 'Register';
                 }
+            });
+        }
+
+        const regUserType = document.getElementById('reg-user-type');
+        const regDept = document.getElementById('reg-department');
+        const studentNumberField = document.getElementById('student-number-field');
+        const programField = document.getElementById('program-field');
+        const yearLevelField = document.getElementById('year-level-field');
+        const enrollmentStatusField = document.getElementById('enrollment-status-field');
+        const programSelect = document.getElementById('reg-program');
+
+        function toggleStudentFields() {
+            const isStudent = regUserType.value === 'student';
+            const deptName = regDept.options[regDept.selectedIndex]?.text || '';
+            const isBasicEd = ["Grade School", "Junior High School", "Preschool"].some(d => deptName.toLowerCase().includes(d.toLowerCase()));
+
+            studentNumberField.style.display = isStudent ? 'block' : 'none';
+            programField.style.display = (isStudent && !isBasicEd) ? 'block' : 'none';
+            yearLevelField.style.display = (isStudent && !isBasicEd) ? 'block' : 'none';
+            enrollmentStatusField.style.display = (isStudent && !isBasicEd) ? 'block' : 'none';
+
+            if (isBasicEd) {
+                if (programSelect) programSelect.value = '';
+                document.getElementById('reg-year-level').value = '';
+                document.getElementById('reg-enrollment-status').value = '';
+            }
+
+            const studentInputs = [
+                document.getElementById('reg-student-number'),
+                document.getElementById('reg-program'),
+                document.getElementById('reg-year-level'),
+                document.getElementById('reg-enrollment-status')
+            ];
+            studentInputs.forEach(input => {
+                if (input) {
+                    const isAcademic = ['reg-program', 'reg-year-level', 'reg-enrollment-status'].includes(input.id);
+                    if (isStudent && !(isAcademic && isBasicEd)) {
+                        input.setAttribute('required', '');
+                    } else {
+                        input.removeAttribute('required');
+                    }
+                }
+            });
+        }
+
+        async function loadPrograms() {
+            const deptId = regDept.value;
+            if (!deptId) {
+                programSelect.innerHTML = '<option value="">Select program</option>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`api.php?action=get_programs&department_id=${deptId}`);
+                const data = await res.json();
+                if (data.success) {
+                    programSelect.innerHTML = '<option value="">Select program</option>';
+                    data.programs.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.name;
+                        programSelect.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load programs', err);
+            }
+        }
+
+        if (regUserType) {
+            regUserType.addEventListener('change', toggleStudentFields);
+        }
+
+        if (regDept) {
+            regDept.addEventListener('change', () => {
+                loadPrograms();
+                toggleStudentFields();
             });
         }
 

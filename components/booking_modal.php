@@ -1,5 +1,5 @@
 <?php
-$isStudent = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'student';
+$isStudent = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'general';
 $readonlyAttr = $isStudent ? 'readonly style="background-color: #e2e8f0; cursor: not-allowed;"' : '';
 ?>
 <!-- Refined Booking Component -->
@@ -16,7 +16,7 @@ $readonlyAttr = $isStudent ? 'readonly style="background-color: #e2e8f0; cursor:
         
         <form id="advanced-booking-form" class="booking-flow">
             <?php 
-            $userRole = $_SESSION['user_role'] ?? 'Student';
+            $userRole = $_SESSION['user_role'] ?? 'General';
             $isStaffOrAdmin = in_array(strtolower($userRole), ['staff', 'admin']);
             ?>
 
@@ -169,20 +169,11 @@ $readonlyAttr = $isStudent ? 'readonly style="background-color: #e2e8f0; cursor:
                 </div>
             </div>
 
-            <!-- 7. Reminder -->
-            <div class="booking-section">
-                <label for="book-reminder" class="label-new">Set a Reminder:</label>
-                <select id="book-reminder" class="select-new">
-                    <option value="10">10 minutes before appointment</option>
-                    <option value="30">30 minutes before appointment</option>
-                    <option value="60" selected>1 hour before appointment</option>
-                    <option value="1440">1 day before appointment</option>
-                </select>
-            </div>
+
 
             <div class="booking-footer-info">
                 <p>Your Appointment status will be "Pending" until the Library admin "Confirms" or "Cancels" your booking request, you will be notified through email if your appointment was accepted. The VENUE or PLATFORM will also be appointed by the library admin.</p>
-                <p style="margin-top: 1rem;">Details such as the booking request's associated NAME, EMAIL, and COLLEGE, will be automatically taken from the user account used to BOOK this request.</p>
+                <p style="margin-top: 1rem;">Details such as the booking request's associated NAME, EMAIL, and DEPARTMENT, will be automatically taken from the user account used to BOOK this request.</p>
             </div>
 
             <button type="submit" class="btn-book-final" id="btn-confirm-advanced">Book</button>

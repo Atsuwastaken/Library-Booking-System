@@ -479,6 +479,9 @@ if ($action === 'get_topic_catalog') {
 }
 
 if ($action === 'add_topic') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $name = trim((string) ($data['name'] ?? ''));
     $departmentIds = $data['department_ids'] ?? [];
@@ -495,6 +498,9 @@ if ($action === 'add_topic') {
 }
 
 if ($action === 'update_topic') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $id = (int) ($data['id'] ?? 0);
     $name = trim((string) ($data['name'] ?? ''));
@@ -512,6 +518,9 @@ if ($action === 'update_topic') {
 }
 
 if ($action === 'delete_topic') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $id = (int) ($data['id'] ?? 0);
     $success = $service->deleteTopic($id);
@@ -554,6 +563,9 @@ if ($action === 'get_programs') {
 }
 
 if ($action === 'add_session') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $fid = $data['facilitator_id'] ?? 0;
     $topic = $data['topic'] ?? '';
@@ -565,6 +577,9 @@ if ($action === 'add_session') {
 }
 
 if ($action === 'remove_session') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $sid = $data['session_id'] ?? 0;
     $success = $service->removeSession($sid);
@@ -573,6 +588,9 @@ if ($action === 'remove_session') {
 }
 
 if ($action === 'add_facilitator') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $name = $data['name'] ?? '';
     $position = $data['position'] ?? '';
@@ -584,6 +602,9 @@ if ($action === 'add_facilitator') {
 }
 
 if ($action === 'update_facilitator') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $id = $data['id'] ?? 0;
     $name = $data['name'] ?? '';
@@ -596,6 +617,9 @@ if ($action === 'update_facilitator') {
 }
 
 if ($action === 'delete_facilitator') {
+    requireAuthenticatedUserId();
+    requireAdminSession();
+
     $data = json_decode(file_get_contents('php://input'), true);
     $id = $data['id'] ?? 0;
     $success = $service->deleteFacilitator($id);
@@ -693,12 +717,20 @@ if ($action === 'update_appointment') {
 }
 
 if ($action === 'cancel_appointment') {
-    requireAuthenticatedUserId();
-    requireAdminSession();
+    $userId = requireAuthenticatedUserId();
     $data = json_decode(file_get_contents('php://input'), true);
     $id = $data['id'] ?? 0;
     $cancellationReason = $data['cancellation_reason'] ?? null;
     $cancelledBy = $data['cancelled_by'] ?? null;
+
+    if (!isAdmin()) {
+        $session = $service->getSessionById($id);
+        if (!$session || $session['user_id'] != $userId) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+    }
+
     $success = $service->cancelAppointment($id, $cancellationReason, $cancelledBy);
     echo json_encode(['success' => $success]);
     exit;

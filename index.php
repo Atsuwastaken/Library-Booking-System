@@ -430,11 +430,10 @@ $isAdminUser = strtolower((string) ($currentUser['role'] ?? '')) === 'admin';
             <button class="btn btn-primary" id="btn-close-success" style="margin-top: 1.5rem;">Close</button>
         </div>
     </div>
-    <?php include 'components/cancel_reason_modal.php'; ?>
-    <?php include 'components/change_instructor_modal.php'; ?>
-    <?php include 'components/booking_modal.php'; ?>
-    <?php include 'components/admin_login_modal.php'; ?>
-    <?php include 'components/facilitators_modal.php'; ?>
+    <?php include __DIR__ . '/components/cancel_reason_modal.php'; ?>
+    <?php include __DIR__ . '/components/change_instructor_modal.php'; ?>
+    <?php include __DIR__ . '/components/booking_modal.php'; ?>
+    <?php include __DIR__ . '/components/facilitators_modal.php'; ?>
 
     <script src="js/app.js"></script>
     <script>

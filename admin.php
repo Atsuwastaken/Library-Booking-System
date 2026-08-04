@@ -1297,28 +1297,28 @@ $studentPhone = $studentPhone ?? '';
     </div> <!-- End of modal-overlay -->
 
     <!-- Edit Appointment/Instructor Modal -->
-    <?php include 'components/admin_edit_modal.php'; ?>
+    <?php include __DIR__ . '/components/admin_edit_modal.php'; ?>
 
     <!-- Admin Calendar Action Modal -->
-    <?php include 'components/admin_calendar_action_modal.php'; ?>
+    <?php include __DIR__ . '/components/admin_calendar_action_modal.php'; ?>
 
     <!-- Admin Off-Day Modal -->
-    <?php include 'components/admin_offday_modal.php'; ?>
+    <?php include __DIR__ . '/components/admin_offday_modal.php'; ?>
 
     <!-- Admin Booking Modal -->
-    <?php include 'components/booking_modal.php'; ?>
+    <?php include __DIR__ . '/components/booking_modal.php'; ?>
 
     <!-- Cancellation Reason Modal -->
-    <?php include 'components/cancel_reason_modal.php'; ?>
+    <?php include __DIR__ . '/components/cancel_reason_modal.php'; ?>
 
     <!-- Seminar Modal -->
-    <?php include 'components/seminar_modal.php'; ?>
+    <?php include __DIR__ . '/components/seminar_modal.php'; ?>
 
     <!-- Facilitator Modal -->
-    <?php include 'components/admin_facilitator_modal.php'; ?>
+    <?php include __DIR__ . '/components/admin_facilitator_modal.php'; ?>
 
     <!-- Topic Modal -->
-    <?php include 'components/admin_topic_modal.php'; ?>
+    <?php include __DIR__ . '/components/admin_topic_modal.php'; ?>
 
     <div class="modal-overlay admin-modal" id="add-general-modal">
         <div class="modal-content admin-modal-card admin-modal-md">

@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFacilitators();
     loadTopicCatalog();
     loadUsersAdminData();
-    loadAdminCalendarContext();
     loadFilterOptions();
     initAdminCalendar();
     initAdminBookingModal();
@@ -13,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initExportSessions();
     initUsersDirectoryUI();
     initAdminAppointmentsSubtabs();
+    initAdminFacilitatorModal();
+    initAdminTopicModal();
+    initAdminSeminarModal();
 
     const topicSearch = document.getElementById('topics-search');
     const facilitatorSearch = document.getElementById('facilitators-search');
@@ -1386,6 +1388,526 @@ function initAdminBookingModal() {
     }
 }
 
+// Topic and facilitator modal state is kept here so component files only render markup.
+let facModalTopics = [];
+let facModalDepartments = [];
+let selectedFacTopicIds = new Set();
+let selectedFacDeptIds = new Set();
+let topicModalDepartments = [];
+let topicModalFacilitators = [];
+let selectedTopicDeptIds = new Set();
+let selectedTopicFacilitatorIds = new Set();
+
+function closeComboPanels(ids) {
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+}
+
+function bindComboToggle(buttonId, panelId, closePanels) {
+    const btn = document.getElementById(buttonId);
+    const panel = document.getElementById(panelId);
+    if (!btn || !panel) return;
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = panel.style.display === 'block';
+        closePanels();
+        panel.style.display = isOpen ? 'none' : 'block';
+    });
+
+    panel.addEventListener('click', (e) => e.stopPropagation());
+}
+
+function updateFacComboButtonLabels() {
+    const deptBtn = document.getElementById('fac-dept-combo-btn');
+    const topicBtn = document.getElementById('fac-topic-combo-btn');
+
+    if (deptBtn) {
+        deptBtn.textContent = selectedFacDeptIds.size > 0
+            ? `${selectedFacDeptIds.size} department${selectedFacDeptIds.size > 1 ? 's' : ''} selected`
+            : 'Select departments...';
+    }
+
+    if (topicBtn) {
+        topicBtn.textContent = selectedFacTopicIds.size > 0
+            ? `${selectedFacTopicIds.size} topic${selectedFacTopicIds.size > 1 ? 's' : ''} selected`
+            : 'Select topics...';
+    }
+}
+
+function updateTopicComboButtonLabels() {
+    const deptBtn = document.getElementById('topic-dept-combo-btn');
+    const facBtn = document.getElementById('topic-facilitator-combo-btn');
+
+    if (deptBtn) {
+        deptBtn.textContent = selectedTopicDeptIds.size > 0
+            ? `${selectedTopicDeptIds.size} department${selectedTopicDeptIds.size > 1 ? 's' : ''} selected`
+            : 'Select departments...';
+    }
+
+    if (facBtn) {
+        facBtn.textContent = selectedTopicFacilitatorIds.size > 0
+            ? `${selectedTopicFacilitatorIds.size} facilitator${selectedTopicFacilitatorIds.size > 1 ? 's' : ''} selected`
+            : 'Select facilitators...';
+    }
+}
+
+async function refreshTopicChecklist() {
+    try {
+        const res = await fetch('api.php?action=get_topics');
+        const data = await res.json();
+        if (data.success) {
+            facModalTopics = data.topics;
+            renderFacTopicChecklist();
+            renderFacTopicTable();
+        }
+    } catch (e) {
+        console.error('Failed to load facilitator topic checklist:', e);
+    }
+}
+
+async function refreshDeptChecklist() {
+    try {
+        const res = await fetch('api.php?action=get_departments');
+        const data = await res.json();
+        if (data.success) {
+            facModalDepartments = data.departments;
+            renderFacDeptChecklist();
+            renderFacDeptTable();
+        }
+    } catch (e) {
+        console.error('Failed to load facilitator department checklist:', e);
+    }
+}
+
+async function refreshTopicDepartmentChecklist() {
+    try {
+        const res = await fetch('api.php?action=get_departments');
+        const data = await res.json();
+        if (data.success) {
+            topicModalDepartments = data.departments;
+            renderTopicDepartmentChecklist();
+            renderTopicDepartmentTable();
+        }
+    } catch (e) {
+        console.error('Failed to load topic department checklist:', e);
+    }
+}
+
+async function refreshTopicFacilitatorTable() {
+    try {
+        const res = await fetch('api.php?action=get_facilitators');
+        const data = await res.json();
+        if (data.success) {
+            topicModalFacilitators = data.facilitators;
+            renderTopicFacilitatorChecklist();
+            renderTopicFacilitatorTable();
+        }
+    } catch (e) {
+        console.error('Failed to load topic facilitator checklist:', e);
+    }
+}
+
+function renderFacTopicChecklist() {
+    const panel = document.getElementById('fac-topic-combo-panel');
+    if (!panel) return;
+
+    panel.innerHTML = '';
+    if (!facModalTopics.length) {
+        panel.innerHTML = '<div class="combo-check-empty">No topics available.</div>';
+        updateFacComboButtonLabels();
+        return;
+    }
+
+    facModalTopics.forEach(t => {
+        const row = document.createElement('label');
+        row.className = 'combo-check-option';
+        row.innerHTML = `<input type="checkbox" value="${escapeHtml(t.id)}" ${selectedFacTopicIds.has(String(t.id)) ? 'checked' : ''}> <span>${escapeHtml(t.name)}</span>`;
+
+        const checkbox = row.querySelector('input');
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) selectedFacTopicIds.add(String(t.id));
+            else selectedFacTopicIds.delete(String(t.id));
+            renderFacTopicTable();
+            updateFacComboButtonLabels();
+        });
+
+        panel.appendChild(row);
+    });
+
+    updateFacComboButtonLabels();
+}
+
+function renderFacDeptChecklist() {
+    const panel = document.getElementById('fac-dept-combo-panel');
+    if (!panel) return;
+
+    panel.innerHTML = '';
+    if (!facModalDepartments.length) {
+        panel.innerHTML = '<div class="combo-check-empty">No departments available.</div>';
+        updateFacComboButtonLabels();
+        return;
+    }
+
+    facModalDepartments.forEach(d => {
+        const row = document.createElement('label');
+        row.className = 'combo-check-option';
+        row.innerHTML = `<input type="checkbox" value="${escapeHtml(d.id)}" ${selectedFacDeptIds.has(String(d.id)) ? 'checked' : ''}> <span>${escapeHtml(d.name)}</span>`;
+
+        const checkbox = row.querySelector('input');
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) selectedFacDeptIds.add(String(d.id));
+            else selectedFacDeptIds.delete(String(d.id));
+            renderFacDeptTable();
+            updateFacComboButtonLabels();
+        });
+
+        panel.appendChild(row);
+    });
+
+    updateFacComboButtonLabels();
+}
+
+function renderFacTopicTable() {
+    const tbody = document.getElementById('fac-topics-selected-table');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const selected = facModalTopics.filter(t => selectedFacTopicIds.has(String(t.id)));
+    if (!selected.length) {
+        tbody.innerHTML = '<tr><td colspan="2" style="padding: 0.6rem 0.8rem; color: #94a3b8;">No topics selected.</td></tr>';
+        return;
+    }
+    selected.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(t.name)}</td><td style="text-align:right;"><button type="button" class="btn btn-outline btn-sm" style="padding:0.15rem 0.5rem;">Remove</button></td>`;
+        tr.querySelector('button').addEventListener('click', () => {
+            selectedFacTopicIds.delete(String(t.id));
+            renderFacTopicChecklist();
+            renderFacTopicTable();
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function renderFacDeptTable() {
+    const tbody = document.getElementById('fac-depts-selected-table');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const selected = facModalDepartments.filter(d => selectedFacDeptIds.has(String(d.id)));
+    if (!selected.length) {
+        tbody.innerHTML = '<tr><td colspan="2" style="padding: 0.6rem 0.8rem; color: #94a3b8;">No departments selected.</td></tr>';
+        return;
+    }
+    selected.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(d.name)}</td><td style="text-align:right;"><button type="button" class="btn btn-outline btn-sm" style="padding:0.15rem 0.5rem;">Remove</button></td>`;
+        tr.querySelector('button').addEventListener('click', () => {
+            selectedFacDeptIds.delete(String(d.id));
+            renderFacDeptChecklist();
+            renderFacDeptTable();
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function renderTopicDepartmentChecklist() {
+    const panel = document.getElementById('topic-dept-combo-panel');
+    if (!panel) return;
+
+    panel.innerHTML = '';
+    if (!topicModalDepartments.length) {
+        panel.innerHTML = '<div class="combo-check-empty">No departments available.</div>';
+        updateTopicComboButtonLabels();
+        return;
+    }
+
+    topicModalDepartments.forEach(d => {
+        const row = document.createElement('label');
+        row.className = 'combo-check-option';
+        row.innerHTML = `<input type="checkbox" value="${escapeHtml(d.id)}" ${selectedTopicDeptIds.has(String(d.id)) ? 'checked' : ''}> <span>${escapeHtml(d.name)}</span>`;
+
+        const checkbox = row.querySelector('input');
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) selectedTopicDeptIds.add(String(d.id));
+            else selectedTopicDeptIds.delete(String(d.id));
+            renderTopicDepartmentTable();
+            updateTopicComboButtonLabels();
+        });
+
+        panel.appendChild(row);
+    });
+
+    updateTopicComboButtonLabels();
+}
+
+function renderTopicFacilitatorChecklist() {
+    const panel = document.getElementById('topic-facilitator-combo-panel');
+    if (!panel) return;
+
+    panel.innerHTML = '';
+    if (!topicModalFacilitators.length) {
+        panel.innerHTML = '<div class="combo-check-empty">No facilitators available.</div>';
+        updateTopicComboButtonLabels();
+        return;
+    }
+
+    topicModalFacilitators.forEach(f => {
+        const row = document.createElement('label');
+        row.className = 'combo-check-option';
+        row.innerHTML = `<input type="checkbox" value="${escapeHtml(f.id)}" ${selectedTopicFacilitatorIds.has(String(f.id)) ? 'checked' : ''}> <span>${escapeHtml(f.name)}</span>`;
+
+        const checkbox = row.querySelector('input');
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) selectedTopicFacilitatorIds.add(String(f.id));
+            else selectedTopicFacilitatorIds.delete(String(f.id));
+            renderTopicFacilitatorTable();
+            updateTopicComboButtonLabels();
+        });
+
+        panel.appendChild(row);
+    });
+
+    updateTopicComboButtonLabels();
+}
+
+function renderTopicDepartmentTable() {
+    const tbody = document.getElementById('topic-depts-selected-table');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const selected = topicModalDepartments.filter(d => selectedTopicDeptIds.has(String(d.id)));
+    if (!selected.length) {
+        tbody.innerHTML = '<tr><td colspan="2" style="padding: 0.6rem 0.8rem; color: #94a3b8;">No departments selected.</td></tr>';
+        return;
+    }
+    selected.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(d.name)}</td><td style="text-align:right;"><button type="button" class="btn btn-outline btn-sm" style="padding:0.15rem 0.5rem;">Remove</button></td>`;
+        tr.querySelector('button').addEventListener('click', () => {
+            selectedTopicDeptIds.delete(String(d.id));
+            renderTopicDepartmentChecklist();
+            renderTopicDepartmentTable();
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function renderTopicFacilitatorTable() {
+    const tbody = document.getElementById('topic-facilitators-selected-table');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const selected = topicModalFacilitators.filter(f => selectedTopicFacilitatorIds.has(String(f.id)));
+    if (!selected.length) {
+        tbody.innerHTML = '<tr><td colspan="2" style="padding: 0.6rem 0.8rem; color: #94a3b8;">No facilitators selected.</td></tr>';
+        return;
+    }
+    selected.forEach(f => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(f.name)}</td><td style="text-align:right;"><button type="button" class="btn btn-outline btn-sm" style="padding:0.15rem 0.5rem;">Remove</button></td>`;
+        tr.querySelector('button').addEventListener('click', () => {
+            selectedTopicFacilitatorIds.delete(String(f.id));
+            renderTopicFacilitatorChecklist();
+            renderTopicFacilitatorTable();
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function resetFacilitatorPickerState() {
+    selectedFacTopicIds = new Set();
+    selectedFacDeptIds = new Set();
+    renderFacTopicChecklist();
+    renderFacDeptChecklist();
+    renderFacTopicTable();
+    renderFacDeptTable();
+}
+
+function resetTopicPickerState() {
+    selectedTopicDeptIds = new Set();
+    selectedTopicFacilitatorIds = new Set();
+    renderTopicDepartmentChecklist();
+    renderTopicFacilitatorChecklist();
+    renderTopicDepartmentTable();
+    renderTopicFacilitatorTable();
+}
+
+async function handleFacilitatorSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('fac-id').value;
+    const payload = {
+        name: document.getElementById('fac-name').value,
+        position: document.getElementById('fac-position').value,
+        topic_ids: Array.from(selectedFacTopicIds),
+        department_ids: Array.from(selectedFacDeptIds)
+    };
+
+    if (id) payload.id = id;
+    const action = id ? 'update_facilitator' : 'add_facilitator';
+
+    try {
+        const res = await fetch(`api.php?action=${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('admin-facilitator-modal').classList.remove('active');
+            notify(id ? 'Facilitator updated' : 'Facilitator created');
+            loadFacilitators();
+            loadTopicCatalog();
+            e.target.reset();
+            document.getElementById('fac-id').value = '';
+            resetFacilitatorPickerState();
+        } else {
+            notify(data.message || 'Failed to save facilitator', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        notify('Network error', 'error');
+    }
+}
+
+async function handleTopicSubmit(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('topic-id').value;
+    const payload = {
+        name: document.getElementById('topic-name').value,
+        department_ids: Array.from(selectedTopicDeptIds),
+        facilitator_ids: Array.from(selectedTopicFacilitatorIds)
+    };
+
+    if (id) payload.id = id;
+    const action = id ? 'update_topic' : 'add_topic';
+
+    try {
+        const res = await fetch(`api.php?action=${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('admin-topic-modal').classList.remove('active');
+            document.getElementById('admin-topic-form').reset();
+            document.getElementById('topic-id').value = '';
+            notify(id ? 'Topic updated' : 'Topic created');
+            resetTopicPickerState();
+            loadTopicCatalog();
+            refreshTopicChecklist();
+            loadFacilitators();
+        } else {
+            notify(data.message || 'Failed to save topic', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        notify('Network error', 'error');
+    }
+}
+
+function initAdminFacilitatorModal() {
+    const form = document.getElementById('admin-fac-form');
+    if (!form) return;
+
+    form.addEventListener('submit', handleFacilitatorSubmit);
+    bindComboToggle('fac-dept-combo-btn', 'fac-dept-combo-panel', () => closeComboPanels(['fac-dept-combo-panel', 'fac-topic-combo-panel']));
+    bindComboToggle('fac-topic-combo-btn', 'fac-topic-combo-panel', () => closeComboPanels(['fac-dept-combo-panel', 'fac-topic-combo-panel']));
+    document.addEventListener('click', () => closeComboPanels(['fac-dept-combo-panel', 'fac-topic-combo-panel']));
+}
+
+function initAdminTopicModal() {
+    const form = document.getElementById('admin-topic-form');
+    if (!form) return;
+
+    form.addEventListener('submit', handleTopicSubmit);
+    bindComboToggle('topic-dept-combo-btn', 'topic-dept-combo-panel', () => closeComboPanels(['topic-dept-combo-panel', 'topic-facilitator-combo-panel']));
+    bindComboToggle('topic-facilitator-combo-btn', 'topic-facilitator-combo-panel', () => closeComboPanels(['topic-dept-combo-panel', 'topic-facilitator-combo-panel']));
+    document.addEventListener('click', () => closeComboPanels(['topic-dept-combo-panel', 'topic-facilitator-combo-panel']));
+}
+
+async function loadSeminarFacilitators(selectedFacId = null) {
+    const sel = document.getElementById('seminar-facilitator-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Guest Speaker (enter name below)</option>';
+    try {
+        const res = await fetch('api.php?action=get_facilitators');
+        const data = await res.json();
+        if (data.success) {
+            data.facilitators.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.name;
+                if (String(f.id) === String(selectedFacId)) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error('Failed to load seminar facilitators:', e);
+    }
+
+    const guestGroup = document.getElementById('seminar-guest-speaker-group');
+    if (guestGroup) guestGroup.style.display = sel.value ? 'none' : 'block';
+}
+
+function initAdminSeminarModal() {
+    const facSelect = document.getElementById('seminar-facilitator-select');
+    const form = document.getElementById('admin-seminar-form');
+
+    facSelect?.addEventListener('change', function () {
+        const guestGroup = document.getElementById('seminar-guest-speaker-group');
+        if (!guestGroup) return;
+        if (this.value) {
+            guestGroup.style.display = 'none';
+            document.getElementById('seminar-speaker').value = '';
+        } else {
+            guestGroup.style.display = 'block';
+        }
+    });
+
+    form?.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const seminarId = document.getElementById('seminar-id').value;
+        const facilitatorId = document.getElementById('seminar-facilitator-select').value || null;
+        const guestSpeaker = document.getElementById('seminar-speaker').value.trim();
+
+        const payload = {
+            title: document.getElementById('seminar-title').value,
+            speaker: facilitatorId ? '' : guestSpeaker,
+            date_time: document.getElementById('seminar-datetime').value,
+            venue: document.getElementById('seminar-venue').value,
+            description: document.getElementById('seminar-desc').value,
+            facilitator_id: facilitatorId || null
+        };
+
+        const action = seminarId ? 'update_seminar' : 'add_seminar';
+        if (seminarId) payload.id = seminarId;
+
+        try {
+            const res = await fetch(`api.php?action=${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('admin-seminar-modal').classList.remove('active');
+                loadSeminars();
+                notify(seminarId ? 'Seminar updated' : 'Seminar created');
+                e.target.reset();
+                document.getElementById('seminar-id').value = '';
+                document.getElementById('seminar-guest-speaker-group').style.display = 'block';
+            } else {
+                notify(data.message || 'Failed to save seminar', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            notify('Network error', 'error');
+        }
+    });
+}
+
 
 // Action Handlers for Topics and Facilitators
 window.openTopicModal = function () {
@@ -1397,8 +1919,9 @@ window.openTopicModal = function () {
     const form = document.getElementById('admin-topic-form');
     if (form) form.reset();
 
-    if (typeof refreshTopicDepartmentChecklist === 'function') refreshTopicDepartmentChecklist();
-    if (typeof refreshTopicFacilitatorTable === 'function') refreshTopicFacilitatorTable();
+    resetTopicPickerState();
+    refreshTopicDepartmentChecklist();
+    refreshTopicFacilitatorTable();
 
     modal.classList.add('active');
 };
@@ -1412,9 +1935,50 @@ window.openFacilitatorModal = function () {
     const form = document.getElementById('admin-fac-form');
     if (form) form.reset();
 
-    if (typeof resetFacilitatorPickerState === 'function') resetFacilitatorPickerState();
+    resetFacilitatorPickerState();
+    refreshTopicChecklist();
+    refreshDeptChecklist();
 
     modal.classList.add('active');
+};
+
+window.openFacEdit = function (id, name, position, topicIdsPiped, deptIdsPiped) {
+    document.getElementById('fac-modal-title').textContent = 'Update Faculty Profile';
+    document.getElementById('fac-submit-btn').textContent = 'Confirm Updates';
+    document.getElementById('fac-id').value = id;
+    document.getElementById('fac-name').value = name;
+    document.getElementById('fac-position').value = position || '';
+
+    selectedFacTopicIds = new Set((topicIdsPiped || '').toString().split(',').map(v => v.trim()).filter(Boolean));
+    selectedFacDeptIds = new Set((deptIdsPiped || '').toString().split(',').map(v => v.trim()).filter(Boolean));
+    renderFacTopicChecklist();
+    renderFacDeptChecklist();
+    renderFacTopicTable();
+    renderFacDeptTable();
+
+    refreshTopicChecklist();
+    refreshDeptChecklist();
+
+    document.getElementById('admin-facilitator-modal').classList.add('active');
+};
+
+window.openTopicEdit = function (id, name, departmentIdsPiped, facilitatorIdsPiped) {
+    document.getElementById('topic-modal-title').textContent = 'Update Topic';
+    document.getElementById('topic-submit-btn').textContent = 'Confirm Updates';
+    document.getElementById('topic-id').value = id;
+    document.getElementById('topic-name').value = name || '';
+
+    selectedTopicDeptIds = new Set((departmentIdsPiped || '').toString().split(',').map(v => v.trim()).filter(Boolean));
+    selectedTopicFacilitatorIds = new Set((facilitatorIdsPiped || '').toString().split(',').map(v => v.trim()).filter(Boolean));
+    renderTopicDepartmentChecklist();
+    renderTopicFacilitatorChecklist();
+    renderTopicDepartmentTable();
+    renderTopicFacilitatorTable();
+
+    refreshTopicDepartmentChecklist();
+    refreshTopicFacilitatorTable();
+
+    document.getElementById('admin-topic-modal').classList.add('active');
 };
 
 window.deleteTopic = async function (id) {

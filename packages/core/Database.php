@@ -245,6 +245,8 @@ class Database
             $this->pdo->exec("UPDATE users SET role = 'general' WHERE LOWER(role) = 'student'");
         }
 
+        $this->hashLegacyPlaintextPasswords();
+
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS programs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
@@ -433,6 +435,25 @@ class Database
             $this->pdo->commit();
         } catch (Exception $e) {
             $this->pdo->rollBack();
+        }
+    }
+
+    private function hashLegacyPlaintextPasswords()
+    {
+        $stmt = $this->pdo->query("SELECT id, password FROM users WHERE password IS NOT NULL AND password != ''");
+        $users = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        $update = $this->pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+
+        foreach ($users as $user) {
+            $password = (string) ($user['password'] ?? '');
+            if (password_get_info($password)['algo'] !== 0) {
+                continue;
+            }
+
+            $update->execute([
+                password_hash($password, PASSWORD_DEFAULT),
+                (int) $user['id']
+            ]);
         }
     }
 }

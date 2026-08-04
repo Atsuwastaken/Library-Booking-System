@@ -22,7 +22,12 @@ class NotificationWorker
 
     private static function logNotification($message)
     {
-        $logFile = __DIR__ . '/notification-dispatch.log';
+        $logDir = __DIR__ . '/logs';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0775, true);
+        }
+
+        $logFile = $logDir . '/notification-dispatch.log';
         file_put_contents($logFile, '[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL, FILE_APPEND);
     }
 

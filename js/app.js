@@ -717,14 +717,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    // Facilitators & Admin Access Logic
-    const adminLoginModal = document.getElementById('admin-login-modal');
-    const adminLoginForm = document.getElementById('admin-login-form');
-    let isFacilitatorAuthenticated = false;
-
+    // Facilitator directory
     const facilitatorsModal = document.getElementById('facilitators-modal');
     const facilitatorsBtn = document.getElementById('view-facilitators-btn');
-    const facilitatorsList = document.getElementById('facilitators-list');
 
     if (facilitatorsBtn) {
         facilitatorsBtn.addEventListener('click', (e) => {
@@ -733,30 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const facTabBtn = document.querySelector('.tab-btn[data-tab="facilitators"]');
             if (facTabBtn) {
                 facTabBtn.click();
-            }
-        });
-    }
-
-    if (adminLoginForm) {
-        adminLoginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const pass = document.getElementById('admin-password').value;
-            const errorMsg = document.getElementById('admin-error');
-
-            // Hardcoded management password for Demo
-            if (pass === 'admin') {
-                isFacilitatorAuthenticated = true;
-                adminLoginModal.classList.remove('active');
-                adminLoginForm.reset();
-                errorMsg.style.display = 'none';
-
-                // Proceed to facilitators modal
-                facilitatorsModal.classList.add('active');
-                loadFacilitators();
-            } else {
-                errorMsg.style.display = 'block';
-                document.getElementById('admin-password').classList.add('shake');
-                setTimeout(() => document.getElementById('admin-password').classList.remove('shake'), 400);
             }
         });
     }
@@ -783,30 +754,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderFacilitators(facilitators) {
         const modalList = document.getElementById('facilitators-list');
         const mainList = document.getElementById('main-facilitators-list');
-        const adminControls = document.getElementById('admin-facilitator-controls');
-
-        if (adminControls) {
-            adminControls.style.display = isFacilitatorAuthenticated ? 'flex' : 'none';
-        }
 
         const buildCard = (f) => {
             const initial = f.name.charAt(0).toUpperCase();
             const card = document.createElement('div');
             card.className = 'fac-profile-card';
             card.innerHTML = `
-                ${isFacilitatorAuthenticated ? `
-                <div class="fac-admin-pill">
-                    <button class="btn-icon" title="Edit Instructor" onclick="handleEditFacilitator(${f.id}, '${f.name.replace(/'/g, "\\'")}', '${f.expertise ? f.expertise.replace(/'/g, "\\'") : ''}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                    <button class="btn-icon" title="Remove Instructor" style="color: var(--danger);" onclick="handleDeleteFacilitator(${f.id}, '${f.name.replace(/'/g, "\\'")}')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                    </button>
-                    <button class="btn-icon" title="Schedule" onclick="handleManageHours(${f.id}, '${f.name.replace(/'/g, "\\'")}')">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                    </button>
-                </div>
-                ` : ''}
                 <div class="fac-visual-box">
                     ${f.image ? `<img src="${f.image}" alt="${f.name}" class="fac-avatar-img">` : `
                     <div class="fac-default-logo">
@@ -848,224 +801,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
-    }
-
-    const facFormPanel = document.getElementById('facilitator-form-panel');
-    const facCrudForm = document.getElementById('fac-crud-form');
-    const facFormTitle = document.getElementById('fac-form-title');
-    const facSaveBtn = document.getElementById('fac-save-btn');
-
-    window.showFacilitatorForm = () => {
-        facFormPanel.style.display = 'block';
-        facFormTitle.textContent = 'Add New Instructor';
-        facCrudForm.reset();
-        document.getElementById('edit-fac-id').value = '';
-        document.getElementById('fac-name').focus();
-
-        const facTopics = document.getElementById('fac-topic-ids');
-        if (facTopics) {
-            facTopics.innerHTML = '';
-            allTopics.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = t.name;
-                facTopics.appendChild(opt);
-            });
-        }
-    };
-
-    window.hideFacilitatorForm = () => {
-        facFormPanel.style.display = 'none';
-        facCrudForm.reset();
-    };
-
-    window.handleEditFacilitator = (id, name, expertise) => {
-        facFormPanel.style.display = 'block';
-        facFormTitle.textContent = `Edit Profile: ${name}`;
-        document.getElementById('edit-fac-id').value = id;
-        document.getElementById('fac-name').value = name;
-
-        const facTopics = document.getElementById('fac-topic-ids');
-        if (facTopics) {
-            facTopics.innerHTML = '';
-            allTopics.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = t.name;
-                // Pre-select if expertise string contains topic name
-                if (expertise && expertise.includes(t.name)) {
-                    opt.selected = true;
-                }
-                facTopics.appendChild(opt);
-            });
-        }
-
-        facFormPanel.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    window.handleDeleteFacilitator = async (id, name) => {
-        if (!confirm(`Are you sure you want to completely remove ${name}? This will also wipe all their scheduled sessions.`)) return;
-
-        try {
-            const res = await fetch('api.php?action=delete_facilitator', {
-                method: 'POST',
-                body: JSON.stringify({ id: id })
-            });
-            const data = await res.json();
-            if (data.success) {
-                loadFacilitators();
-                await updateCalendar(true);
-            }
-        } catch (e) { console.error(e); }
-    };
-
-    if (facCrudForm) {
-        facCrudForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit-fac-id').value;
-            const name = document.getElementById('fac-name').value;
-
-            const facTopics = document.getElementById('fac-topic-ids');
-            const topicIds = Array.from(facTopics.selectedOptions).map(opt => parseInt(opt.value));
-
-            const action = id ? 'update_facilitator' : 'add_facilitator';
-            const payload = id ? { id, name, topic_ids: topicIds } : { name, topic_ids: topicIds };
-
-            try {
-                const res = await fetch(`api.php?action=${action}`, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    hideFacilitatorForm();
-                    loadFacilitators();
-                } else {
-                    alert('Error saving facilitator data.');
-                }
-            } catch (e) { console.error(e); }
-        });
-    }
-
-    const managePanel = document.getElementById('facilitator-manage-panel');
-    const manageFacName = document.getElementById('manage-facilitator-name');
-    const manageFacIdInput = document.getElementById('manage-facilitator-id');
-    const manageSessionsList = document.getElementById('manage-sessions-list');
-    const addSessionForm = document.getElementById('add-session-form');
-
-    window.handleManageHours = (id, name) => {
-        facilitatorsList.style.display = 'none';
-        managePanel.style.display = 'block';
-        manageFacName.textContent = `Manage Hours for ${name}`;
-        manageFacIdInput.value = id;
-
-        const newTopicSelect = document.getElementById('new-session-topic');
-        if (newTopicSelect) {
-            newTopicSelect.innerHTML = '';
-            // Since a session must have a topic, we populate it with all topics
-            allTopics.forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.name; // Keep as name string since add_session takes a string topic and DB is string
-                opt.textContent = t.name;
-                newTopicSelect.appendChild(opt);
-            });
-        }
-
-        loadFacilitatorSessions(id);
-    };
-
-    window.closeManagePanel = () => {
-        facilitatorsList.style.display = 'grid';
-        managePanel.style.display = 'none';
-    };
-
-    async function loadFacilitatorSessions(fid) {
-        manageSessionsList.innerHTML = '<div class="loader-container">Loading slots...</div>';
-
-        // Use allSessions if already loaded, or fetch fresh
-        if (allSessions.length === 0) await updateCalendar(true);
-
-        const mine = allSessions.filter(s => s.facilitator_id == fid);
-        renderManageSlots(mine, fid);
-    }
-
-    function renderManageSlots(sessions, fid) {
-        if (sessions.length === 0) {
-            manageSessionsList.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 1rem;">No hours scheduled yet.</p>';
-            return;
-        }
-
-        let html = `
-            <div style="background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm);">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="text-align: left; background: #f8fafc; border-bottom: 2px solid var(--border); color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                            <th style="padding: 1rem;">Topic</th>
-                            <th style="padding: 1rem;">Schedule</th>
-                            <th style="padding: 1rem;">Mode</th>
-                            <th style="padding: 1rem;">Status</th>
-                            <th style="padding: 1rem; text-align: right;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        sessions.forEach(s => {
-            const statusColor = s.status === 'AVAILABLE' ? 'var(--success)' : 'var(--danger)';
-            html += `
-                <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s ease;">
-                    <td style="padding: 1rem; font-weight: 600;">${s.topic}</td>
-                    <td style="padding: 1rem; font-size: 0.9rem;">${s.date_time}</td>
-                    <td style="padding: 1rem;"><span class="badge ${s.mode.toLowerCase() === 'online' ? 'badge-online' : 'badge-onsite'}">${s.mode}</span></td>
-                    <td style="padding: 1rem;"><span style="color: ${statusColor}; font-weight: 700; font-size: 0.8rem;">${s.status}</span></td>
-                    <td style="padding: 1rem; text-align: right;">
-                        ${s.status === 'AVAILABLE' ? `<button class="btn btn-muted btn-sm" style="color: var(--danger); border-color: rgba(207, 34, 46, 0.2);" onclick="handleDeleteSession(${s.id}, ${fid})">Remove</button>` : '<span style="color: var(--text-secondary); font-style: italic; font-size: 0.8rem;">Locked</span>'}
-                    </td>
-                </tr>
-            `;
-        });
-
-        html += '</tbody></table></div>';
-        manageSessionsList.innerHTML = html;
-    }
-
-    window.handleDeleteSession = async (sid, fid) => {
-        if (!confirm('Are you sure you want to remove this available slot?')) return;
-
-        const res = await fetch('api.php?action=remove_session', {
-            method: 'POST',
-            body: JSON.stringify({ session_id: sid })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            await updateCalendar(true); // Master refresh
-            loadFacilitatorSessions(fid); // Panel refresh
-        }
-    };
-
-    if (addSessionForm) {
-        addSessionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fid = manageFacIdInput.value;
-            const topic = document.getElementById('new-session-topic').value;
-            const dt = document.getElementById('new-session-dt').value;
-            const mode = document.getElementById('new-session-mode').value;
-
-            const res = await fetch('api.php?action=add_session', {
-                method: 'POST',
-                body: JSON.stringify({ facilitator_id: fid, topic, date_time: dt, mode })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                addSessionForm.reset();
-                await updateCalendar(true);
-                loadFacilitatorSessions(fid);
-            } else {
-                alert('Error adding session slot.');
-            }
-        });
     }
 
     window.handleShatterAndBook = (btn, id, name) => {
